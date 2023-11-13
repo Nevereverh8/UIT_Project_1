@@ -132,4 +132,28 @@ def get_category(category: str):
 
 
 def insert_order(client_id: int, time_placed: int, admin_id: int, order_list: dict):
-    pass
+    with db as con:
+        sql_insert_order = '''INSERT INTO Orders (client_id, time_placed, delivery_time,
+                                                  is_finished, is_aborted, admin_processed,
+                                                  total_price)
+                              VALUES (?,?,?,?,?,?,?) '''
+        con.execute(sql_insert_order, [client_id, time_placed, ' ', 0, 0, admin_id, 0])
+        order_id = con.execute('SELECT max(id)  from Orders')
+        sql_insert_order_list = '''INSERT INTO Order_lists (food_id, amount, order_id)
+                              VALUES (?,?,?)'''
+        total_price = 0
+        for food_id, amount in order_list:
+            price = con.execute(f'''SELECT price FROM Food
+                           WHERE id = '{food_id}' ''').fetchone()[0]
+            total_price += price * amount
+            con.execute(sql_insert_order_list, [food_id, amount, order_id])
+        sql_update_order = f'''UPDATE Orders
+                              SET delivery_time = 50 + (SELECT MAX(cook_time) FROM Food,
+                                                   WHERE food_id IN (SELECT food_id FROM Order_lists
+                                                                     WHERE order_id = '{order_id}'
+                                                                     )
+                                                        ),
+                                  total_price = {total_price}
+                              WHERE id = {order_id}
+                               '''
+        con.execute(sql_update_order)
