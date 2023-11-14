@@ -62,7 +62,6 @@ if __name__ == '__main__':
             con.execute(sql_insert, [i])
 
         # Admins
-
         con.execute('''
                         CREATE TABLE IF NOT EXISTS Admins(
                         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -88,10 +87,14 @@ if __name__ == '__main__':
                         CREATE TABLE IF NOT EXISTS Clients(
                         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                         name TEXT,
-                        role INTEGER,
-                        tg_id INTEGER)
+                        tel INTEGER,
+                        age INTEGER,
+                        adress TEXT,
+                        chat_type TEXT,
+                        chat_id INTEGER)
                         ''')
-
+        sql_insert = '''INSERT INTO Clients (name, tel , age, adress, chat_type, chat_id) VALUES (?,?,?,?,?)'''
+        con.execute(sql_insert, ['Женя', 375291234567, 16, 'ул. Пушкина д.42 к.2, кв 69', 'VK', 123456789])
         # Food_reviews
         con.execute('''
                         CREATE TABLE IF NOT EXISTS Food_reviews(
@@ -141,7 +144,6 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
     Order list is dict {'name': 'amount', ...}
     """
     with db as con:
-
         sql_insert_order = '''INSERT INTO Orders (client_id, time_placed, delivery_time,
                                                   is_finished, is_aborted, admin_processed,
                                                   total_price)
