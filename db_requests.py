@@ -61,6 +61,7 @@ if __name__ == '__main__':
             con.execute(sql_insert, [i])
 
         # Admins
+
         con.execute('''
                         CREATE TABLE IF NOT EXISTS Admins(
                         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -68,6 +69,8 @@ if __name__ == '__main__':
                         role INTEGER,
                         tg_id INTEGER)
                         ''')
+        sql_insert = '''INSERT INTO Admins (name, role, tg_id) VALUES (?,?,?)'''
+        con.execute(sql_insert, ["Юра", 2, 413844851])
 
         # Order_reviews
         con.execute('''
