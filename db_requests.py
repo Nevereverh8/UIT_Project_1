@@ -1,11 +1,15 @@
+import json
 import sqlite3 as sl
 
+with open('config.json') as file:
+    db_path = json.load(file)['db_path']
+    print(db_path)
 
-# There's will be json file path
-db = sl.connect('deitabeiza.db', check_same_thread=False)
+db = sl.connect(db_path, check_same_thread=False)
 
 if __name__ == '__main__':
-    category_list = ['Напитки', 'Курица', 'Мясо', 'Рыба', 'Салаты', 'Алкогольные напитки', 'Пиццы', 'Соусы', 'Десерты']
+    category_list = ['Напитки', 'Курица', 'Мясо', 'Рыба', 'Салаты', 'Алкогольные напитки',
+                      'Пиццы', 'Соусы', 'Десерты']
     food_list = [['Кока-кола 0.5л в стекле', 2.50, 0, 1, 5], ['Фанта 0.5л в стекле', 2.50, 0, 1, 5],
                  ['Куриные наггетсы 9 шт', 7.99, 0, 2, 20], ['Куриные наггетсы 15 шт', 10.49, 0, 2, 20],
                  ['Свинныя отбивные 350 гр', 7.99, 0, 3, 25], ['Мясо по французски 350 гр', 9.99, 0, 3, 25],
@@ -93,7 +97,7 @@ if __name__ == '__main__':
                         chat_type TEXT,
                         chat_id INTEGER)
                         ''')
-        sql_insert = '''INSERT INTO Clients (name, tel , age, adress, chat_type, chat_id) VALUES (?,?,?,?,?)'''
+        sql_insert = '''INSERT INTO Clients (name, tel , age, adress, chat_type, chat_id) VALUES (?,?,?,?,?,?)'''
         con.execute(sql_insert, ['Женя', 375291234567, 16, 'ул. Пушкина д.42 к.2, кв 69', 'VK', 123456789])
         # Food_reviews
         con.execute('''
@@ -140,7 +144,7 @@ def get_category(category: str):
 def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: dict):
     """
     Inserts order and order list(shopping cart) to the database.
-    time_placed is "YYYY.MM.DD HH:MM".
+    time_placed is "DD.MM.YYYY HH:MM".
     Order list is dict {'name': 'amount', ...}
     """
     with db as con:
@@ -149,24 +153,24 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
                                                   total_price)
                               VALUES (?,?,?,?,?,?,?) '''
         con.execute(sql_insert_order, [client_id, time_placed, ' ', 0, 0, admin_id, 0])
-        order_id = con.execute('SELECT max(id)  from Orders')
+        order_id = con.execute('SELECT max(id)  from Orders').fetchone()[0]
         sql_insert_order_list = '''INSERT INTO Order_lists (food_id, amount, order_id)
                               VALUES (?,?,?)'''
         total_price = 0
-        for food, amount in order_list:
-            food_id = con.execute(f'''SELECT food_id FROM Food
+        for food, amount in order_list.items():
+            food_id = con.execute(f'''SELECT id FROM Food
                                WHERE name = '{food}' ''').fetchone()[0]
             price = con.execute(f'''SELECT price FROM Food
                            WHERE id = '{food_id}' ''').fetchone()[0]
             total_price += price * amount
             con.execute(sql_insert_order_list, [food_id, amount, order_id])
         sql_update_order = f'''UPDATE Orders
-                              SET delivery_time = 50 + (SELECT MAX(cook_time) FROM Food,
-                                                   WHERE food_id IN (SELECT food_id FROM Order_lists
+                              SET delivery_time = 50 + (SELECT MAX(cook_time) FROM Food
+                                                   WHERE id IN (SELECT food_id FROM Order_lists
                                                                      WHERE order_id = '{order_id}'
                                                                      )
                                                         ),
                                   total_price = {total_price}
-                              WHERE id = {order_id}
+                             WHERE id = {order_id}
                                '''
         con.execute(sql_update_order)
