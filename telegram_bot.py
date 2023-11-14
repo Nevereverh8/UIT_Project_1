@@ -17,5 +17,6 @@ def query_handler(call):
     bot.answer_callback_query(callback_query_id=call.id)
     
 print("Ready")
+
 bot.infinity_polling()    
 
