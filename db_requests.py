@@ -3,14 +3,14 @@ import sqlite3 as sl
 
 with open('config.json') as file:
     db_path = json.load(file)['db_path']
-    print(db_path)
+    print('database connected to '+ db_path)
 
 db = sl.connect(db_path, check_same_thread=False)
 
 
 if __name__ == '__main__':
     category_list = ['Напитки', 'Курица', 'Мясо', 'Рыба', 'Салаты', 'Алкогольные напитки',
-                      'Пиццы', 'Соусы', 'Десерты']
+                     'Пиццы', 'Соусы', 'Десерты', 'Роллы', 'Детское меню']
     food_list = [['Кока-кола 0.5л в стекле', 2.50, 0, 1, 5], ['Фанта 0.5л в стекле', 2.50, 0, 1, 5],
                  ['Куриные наггетсы 9 шт', 7.99, 0, 2, 20], ['Куриные наггетсы 15 шт', 10.49, 0, 2, 20],
                  ['Свинныя отбивные 350 гр', 7.99, 0, 3, 25], ['Мясо по французски 350 гр', 9.99, 0, 3, 25],
@@ -164,5 +164,48 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
                              WHERE id = {order_id}
                                '''
         con.execute(sql_update_order)
+
+
+def get_client(client_chat_id: int):
+    """
+     Returns tuple of client data or None if there is no such.
+
+    :return: (id, name, tel, age, adress, chat_type, chat_id) or None
+    :param client_chat_id: id of client chat
+    :rtype: tuple
+    """
+    with db as con:
+        client = con.execute(f'''
+                       SELECT * from Clients
+                       WHERE chat_id = {client_chat_id}
+        ''')
+        client = client.fetchone()
+        if client:
+            return client
+        else:
+            return None
+
+
+def insert_client(name, tel, age, adress, chat_type, chat_id):
+    """
+    If client in database - retruns id, if not - adds and return id
+
+    :param chat_type: VK or TG
+    :return: id of client
+    :rtype: int
+    """
+    with db as con:
+        a = con.execute(f'''
+                               SELECT * from Clients
+                               WHERE chat_id = {chat_id}
+                ''').fetchone()
+        if a:
+            client_id = a[0]
+        else:
+            con.execute(f'''INSERT INTO client (client_id, name, adress, chat_type, chat_id)
+                              VALUES ({name, tel, age, adress, chat_type, chat_id}) ''')
+            client_id = con.execute('''SELECT max(id) FROM Clients''')
+        return client_id
+
 
 
