@@ -110,7 +110,6 @@ if __name__ == '__main__':
 def get_categories():
     """
     Returns list of all categories
-    :return:
     """
     with db as con:
         categories = con.execute('''SELECT name FROM Categories''')
@@ -135,8 +134,14 @@ def get_category(category: str):
         return food
 
 
-def insert_order(client_id: int, time_placed: int, admin_id: int, order_list: dict):
+def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: dict):
+    """
+    Inserts order and order list(shopping cart) to the database.
+    time_placed is "YYYY.MM.DD HH:MM".
+    Order list is dict {'name': 'amount', ...}
+    """
     with db as con:
+
         sql_insert_order = '''INSERT INTO Orders (client_id, time_placed, delivery_time,
                                                   is_finished, is_aborted, admin_processed,
                                                   total_price)
@@ -146,7 +151,9 @@ def insert_order(client_id: int, time_placed: int, admin_id: int, order_list: di
         sql_insert_order_list = '''INSERT INTO Order_lists (food_id, amount, order_id)
                               VALUES (?,?,?)'''
         total_price = 0
-        for food_id, amount in order_list:
+        for food, amount in order_list:
+            food_id = con.execute(f'''SELECT food_id FROM Food
+                               WHERE name = '{food}' ''').fetchone()[0]
             price = con.execute(f'''SELECT price FROM Food
                            WHERE id = '{food_id}' ''').fetchone()[0]
             total_price += price * amount
