@@ -141,7 +141,6 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
     Order list is dict {'name': 'amount', ...}
     """
     with db as con:
-
         sql_insert_order = '''INSERT INTO Orders (client_id, time_placed, delivery_time,
                                                   is_finished, is_aborted, admin_processed,
                                                   total_price)
