@@ -2,6 +2,9 @@ import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from db_requests import *
+import sys
+
+# sys.stdout.flush() После принта
 
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns');
 
