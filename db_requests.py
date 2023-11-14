@@ -7,6 +7,7 @@ with open('config.json') as file:
 
 db = sl.connect(db_path, check_same_thread=False)
 
+
 if __name__ == '__main__':
     category_list = ['Напитки', 'Курица', 'Мясо', 'Рыба', 'Салаты', 'Алкогольные напитки',
                       'Пиццы', 'Соусы', 'Десерты']
