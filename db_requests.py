@@ -31,7 +31,7 @@ if __name__ == '__main__':
                         admin_processed,
                         total_price REAL)
                         ''')
-
+print('готовый прод')
         # Order_lists
         con.execute('''
                         CREATE TABLE IF NOT EXISTS Order_lists(
