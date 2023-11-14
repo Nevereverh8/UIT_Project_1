@@ -1,5 +1,6 @@
 import sqlite3 as sl
 
+
 # There's will be json file path
 db = sl.connect('deitabeiza.db', check_same_thread=False)
 
