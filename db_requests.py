@@ -1,7 +1,7 @@
 import sqlite3 as sl
 
 # There's will be json file path
-db = sl.connect('deitabeiza.db')
+db = sl.connect('deitabeiza.db', check_same_thread=False)
 
 if __name__ == '__main__':
     category_list = ['Напитки', 'Курица', 'Мясо', 'Рыба', 'Салаты', 'Алкогольные напитки', 'Пиццы', 'Соусы', 'Десерты']
