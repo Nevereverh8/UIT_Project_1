@@ -202,10 +202,11 @@ def insert_client(name, tel, age, adress, chat_type, chat_id):
         if a:
             client_id = a[0]
         else:
-            con.execute(f'''INSERT INTO client (client_id, name, adress, chat_type, chat_id)
-                              VALUES ({name, tel, age, adress, chat_type, chat_id}) ''')
-            client_id = con.execute('''SELECT max(id) FROM Clients''')
+            con.execute(f'''INSERT INTO Clients (name, tel, age, adress, chat_type, chat_id)
+                              VALUES ('{name}', {tel}, {age}, '{adress}', '{chat_type}', {chat_id}) ''')
+            client_id = con.execute('''SELECT max(id) FROM Clients''').fetchone()[0]
         return client_id
+
 
 
 
