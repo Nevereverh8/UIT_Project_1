@@ -17,10 +17,10 @@ keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-1'))
 # Gen 1-st menu page
 def gen_menu(page):
     categories, keyb_categories = get_categories(), InlineKeyboardMarkup()
+    # Расчет старта и конца для страницы
+    # Calculation of the beginning and end of the page
     start = page-1 + 9*(page-1)
     end = start + 10
-    print(categories,'\n',start, end)
-    sys.stdout.flush()
     for c in categories[start:end]:
         keyb_categories.add(InlineKeyboardButton(c, callback_data=f'c-{c}'))
     if end > 10:
@@ -42,13 +42,17 @@ def query_handler(call):
         a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(2)[0])
         sessions[call.message.chat.id]['last_message'] = a.message_id
 
-    # слайдер листает странцы, пока что только назад. Потом добавлю вперед 12:34 15.11
+    # Cлайдер листает странцы
+    # Slider to change pages
     if call.data.split('-')[0] == 'c':
+        print(sessions, call.message.chat.id)
+        sys.stdout.flush()
         if call.data.split('-')[1] == 'back':
             gen_menu_info = gen_menu(int(call.data.split('-')[2]))
-            print(sessions, call.message.chat.id)
-            sys.stdout.flush()
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1)[0])
+        if call.data.split('-')[1] == 'forward':
+            gen_menu_info = gen_menu(int(call.data.split('-')[2]))
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1)[0])
 print("Ready")
 
 bot.infinity_polling()    
