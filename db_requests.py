@@ -32,7 +32,6 @@ if __name__ == '__main__':
                         admin_processed,
                         total_price REAL)
                         ''')
-print('готовый прод')
         # Order_lists
         con.execute('''
                         CREATE TABLE IF NOT EXISTS Order_lists(
@@ -76,16 +75,6 @@ print('готовый прод')
                         ''')
         sql_insert = '''INSERT INTO Admins (name, role, tg_id) VALUES (?,?,?)'''
         con.execute(sql_insert, ["Юра", 2, 413844851])
-
-        # Order_reviews
-        con.execute('''
-                        CREATE TABLE IF NOT EXISTS Order_reviews(
-                        id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                        order_id INTEGER,
-                        client_id INTEGER,
-                        rating INTEGER,
-                        comment TEXT)
-                        ''')
 
         # Clients
         con.execute('''
@@ -175,3 +164,5 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
                              WHERE id = {order_id}
                                '''
         con.execute(sql_update_order)
+
+
