@@ -19,7 +19,9 @@ def gen_menu(page, fix_pos=10):
     categories, keyb_categories = get_categories(), InlineKeyboardMarkup()
     # Расчет старта и конца для страницы
     # Calculation of the beginning and end of the page
-    start = page-1 + (fix_pos-1)*(page-1)
+    print(categories)
+    sys.stdout.flush()
+    start = fix_pos*(page-1)
     end = start + fix_pos
     for c in categories[start:end]:
         keyb_categories.add(InlineKeyboardButton(c, callback_data=f'c-{c}'))
