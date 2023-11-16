@@ -11,7 +11,7 @@ bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
 sessions = {}
 
 keyb_menu = InlineKeyboardMarkup()
-keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-1'))
+keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m'))
 
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
@@ -26,10 +26,22 @@ def gen_menu(page, fix_pos=10):
     for c in categories[start:end]:
         keyb_categories.add(InlineKeyboardButton(c, callback_data=f'c-{c}'))
     if end > fix_pos:
-        keyb_categories.add(InlineKeyboardButton('Назад', callback_data=f'c-back-{page}'))
+        keyb_categories.add(InlineKeyboardButton('Назад', callback_data=f'cn-back-{page}'))
     if fix_pos <= end < len(categories):
-        keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'c-forward-{page}')) 
+        keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'cn-forward-{page}')) 
     return keyb_categories, page
+
+# Генерирует позиции в котегории ps без слайдера
+# Gen food in category
+def gen_foods(category, call_message):
+    food_list = get_category(category)
+    for f in food_list:
+        keyb_food = InlineKeyboardMarkup()
+        keyb_food.add(InlineKeyboardButton('+', callback_data=f'f;{f[0]};+'))
+        keyb_food.add(InlineKeyboardButton('-', callback_data=f'f;{f[0]};-'))
+        bot.send_message(call_message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=keyb_food)
+    print(food_list)
+    sys.stdout.flush()
 
 @bot.message_handler(content_types=['text'])
 def start(message):
@@ -37,16 +49,23 @@ def start(message):
         sessions[message.chat.id] = {}
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
 
+# call back types: can be changed
+#   m - menu
+#   cn - category navigation
+#       cn_back - back button
+#       cn_forward - forward button
+#   c - chosen category
+
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
     bot.answer_callback_query(callback_query_id=call.id)
-    if call.data == 'm-1':
+    if call.data == 'm':
         a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
         sessions[call.message.chat.id]['last_message_menu'] = a.message_id
 
     # Cлайдер листает странцы
     # Slider to change pages
-    if call.data.split('-')[0] == 'c':
+    if call.data.split('-')[0] == 'cn':
         print(sessions, call.message.chat.id)
         sys.stdout.flush()
         if call.data.split('-')[1] == 'back':
@@ -55,6 +74,21 @@ def query_handler(call):
         if call.data.split('-')[1] == 'forward':
             gen_menu_info = gen_menu(int(call.data.split('-')[2]))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message_menu'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1)[0])
+    
+    # Позиции в категории
+    # Food in category
+    if call.data.split('-')[0] == 'c':
+        gen_foods(call.data.split('-')[1], call.message)
+        
+    # Callback для кнопок + и -, просто тест
+    # Callback buttons + and -, just testing
+    if call.data.split(';')[0] == 'f':
+        print(call.data.split(';')[1:])
+        sys.stdout.flush()
+
+# Надо добавить навигацию и корзину
+# Need to add navigation slider and cart
+
 print("Ready")
 
 bot.infinity_polling()    
