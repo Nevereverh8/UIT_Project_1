@@ -15,17 +15,17 @@ keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-1'))
 
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
-def gen_menu(page):
+def gen_menu(page, fix_pos=10):
     categories, keyb_categories = get_categories(), InlineKeyboardMarkup()
     # Расчет старта и конца для страницы
     # Calculation of the beginning and end of the page
-    start = page-1 + 9*(page-1)
-    end = start + 10
+    start = page-1 + (fix_pos-1)*(page-1)
+    end = start + fix_pos
     for c in categories[start:end]:
         keyb_categories.add(InlineKeyboardButton(c, callback_data=f'c-{c}'))
-    if end > 10:
+    if end > fix_pos:
         keyb_categories.add(InlineKeyboardButton('Назад', callback_data=f'c-back-{page}'))
-    if 10 <= end < len(categories):
+    if fix_pos <= end < len(categories):
         keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'c-forward-{page}')) 
     return keyb_categories, page
 
@@ -39,8 +39,8 @@ def start(message):
 def query_handler(call):
     bot.answer_callback_query(callback_query_id=call.id)
     if call.data == 'm-1':
-        a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(2)[0])
-        sessions[call.message.chat.id]['last_message'] = a.message_id
+        a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
+        sessions[call.message.chat.id]['last_message_menu'] = a.message_id
 
     # Cлайдер листает странцы
     # Slider to change pages
@@ -49,10 +49,10 @@ def query_handler(call):
         sys.stdout.flush()
         if call.data.split('-')[1] == 'back':
             gen_menu_info = gen_menu(int(call.data.split('-')[2]))
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1)[0])
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message_menu'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1)[0])
         if call.data.split('-')[1] == 'forward':
             gen_menu_info = gen_menu(int(call.data.split('-')[2]))
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1)[0])
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message_menu'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1)[0])
 print("Ready")
 
 bot.infinity_polling()    
