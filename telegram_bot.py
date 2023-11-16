@@ -86,6 +86,7 @@ def query_handler(call):
         print(call.data.split(';')[1:])
         sys.stdout.flush()
 
+
 # Надо добавить навигацию и корзину
 # Need to add navigation slider and cart
 
