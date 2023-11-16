@@ -33,13 +33,16 @@ def gen_menu(page, fix_pos=10):
 
 # Генерирует позиции в котегории ps без слайдера
 # Gen food in category
+# 
+# P.S Скорее всего надо будет переделать
 def gen_foods(category, call_message):
     food_list = get_category(category)
     for f in food_list:
         keyb_food = InlineKeyboardMarkup()
-        keyb_food.add(InlineKeyboardButton('+', callback_data=f'f;{f[0]};+'))
-        keyb_food.add(InlineKeyboardButton('-', callback_data=f'f;{f[0]};-'))
-        bot.send_message(call_message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=keyb_food)
+        keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{f[0]};-'), InlineKeyboardButton('Кол-во: 0', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{f[0]};+'))
+        keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{f[0]};')) #Добавить в calldatу кол-во товара, из кнопки кол-во
+        a = bot.send_message(call_message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=keyb_food)
+        sessions[call_message.chat.id]['last_foods'].append({a.message_id: 0})
     print(food_list)
     sys.stdout.flush()
 
@@ -47,6 +50,7 @@ def gen_foods(category, call_message):
 def start(message):
     if message.text == '/start':
         sessions[message.chat.id] = {}
+        sessions[message.chat.id]['last_foods'] = []
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
 
 # call back types: can be changed
@@ -55,6 +59,9 @@ def start(message):
 #       cn_back - back button
 #       cn_forward - forward button
 #   c - chosen category
+#   f - chosen food 
+#       f;..;- - amount -1
+#       f;..;+ - amount +1
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
@@ -78,13 +85,14 @@ def query_handler(call):
     # Позиции в категории
     # Food in category
     if call.data.split('-')[0] == 'c':
-        gen_foods(call.data.split('-')[1], call.message)
+        print(list(gen_foods(call.data.split('-')[1], call.message)))
+        sys.stdout.flush()
         
     # Callback для кнопок + и -, просто тест
     # Callback buttons + and -, just testing
-    if call.data.split(';')[0] == 'f':
-        print(call.data.split(';')[1:])
-        sys.stdout.flush()
+    if call.data.split(';')[0] == 'fa':
+        if call.data.split(';')[2] == '+':
+            pass
 
 
 # Надо добавить навигацию и корзину
