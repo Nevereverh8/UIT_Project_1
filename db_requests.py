@@ -122,7 +122,7 @@ def get_category(category: str):
         food = con.execute(f'''
                                      SELECT name, price FROM Food
                                      WHERE category_id = (SELECT id FROM Categories
-                                                          WHERE name = '{category}')
+                                                          WHERE name = '{category}'  AND stop_flag = 0)
                                      ''')
         food = food.fetchall()
         dict_of_food = {}
@@ -135,15 +135,21 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
     """
     Inserts order and order list(shopping cart) to the database.
     time_placed is "DD.MM.YYYY HH:MM".
-    Order list is dict {'name': 'amount', ...}
+
+    :param order_list: dict {'name': 'amount', ...}
+    :return: delivery time in minutes
+    :rtype: int
     """
     with db as con:
+        # add order with blank delivery time and total price
         sql_insert_order = '''INSERT INTO Orders (client_id, time_placed, delivery_time,
                                                   is_finished, is_aborted, admin_processed,
                                                   total_price)
                               VALUES (?,?,?,?,?,?,?) '''
         con.execute(sql_insert_order, [client_id, time_placed, ' ', 0, 0, admin_id, 0])
         order_id = con.execute('SELECT max(id)  from Orders').fetchone()[0]
+
+        # add cart into order list
         sql_insert_order_list = '''INSERT INTO Order_lists (food_id, amount, order_id)
                               VALUES (?,?,?)'''
         total_price = 0
@@ -154,8 +160,10 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
                            WHERE id = '{food_id}' ''').fetchone()[0]
             total_price += price * amount
             con.execute(sql_insert_order_list, [food_id, amount, order_id])
+
+        # Update order with delivery time and tota price
         sql_update_order = f'''UPDATE Orders
-                              SET delivery_time = 50 + (SELECT MAX(cook_time) FROM Food
+                              SET delivery_time = 30 + (SELECT MAX(cook_time) FROM Food
                                                    WHERE id IN (SELECT food_id FROM Order_lists
                                                                      WHERE order_id = '{order_id}'
                                                                      )
@@ -164,6 +172,11 @@ def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: di
                              WHERE id = {order_id}
                                '''
         con.execute(sql_update_order)
+
+        # return delivery time
+        return con.execute(f'''SELECT delivery_time FROM Orders 
+                       WHERE id = '{order_id}' 
+                       ''').fetchone()[0]
 
 
 def get_client(client_chat_id: int):
@@ -206,6 +219,20 @@ def insert_client(name, tel, age, adress, chat_type, chat_id):
                               VALUES ('{name}', {tel}, {age}, '{adress}', '{chat_type}', {chat_id}) ''')
             client_id = con.execute('''SELECT max(id) FROM Clients''').fetchone()[0]
         return client_id
+
+
+def stop_food(food_name):
+    with db as con:
+        con.execute(f'''UPDATE Food
+                        SET stop_flag = 1 
+                        WHERE name = '{food_name}' ''')
+
+
+def unstop_food(food_name):
+    with db as con:
+        con.execute(f'''UPDATE Food
+                        SET stop_flag = 0 
+                        WHERE name = '{food_name}' ''')
 
 
 
