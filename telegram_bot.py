@@ -33,8 +33,6 @@ def gen_menu(page, fix_pos=10):
 
 # Генерирует позиции в котегории ps без слайдера
 # Gen food in category
-# 
-# P.S Скорее всего надо будет переделать
 def gen_foods(food, call_message, temp=0):
     # это проверка чтоб в словаре было фиксированное 
     # кол-во айдишников блюд чтобы начать работу с кнопками + и -. 
@@ -46,7 +44,6 @@ def gen_foods(food, call_message, temp=0):
     if len(sessions[call_message.chat.id]['last_foods']) < 2:
         temp = 0
     else:
-        print(sessions[call_message.chat.id]['last_foods'])
         temp = sessions[call_message.chat.id]['last_foods'][call_message.message_id]
     keyb_food = InlineKeyboardMarkup()
     keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
@@ -98,14 +95,18 @@ def query_handler(call):
             a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message, 0))
             sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
         
-    # Callback для кнопок + и -. UPD 14:38 17.11 - готово для кнопки +, но ме кажется очень костыльно. идентично для кнопки -
-    # Callback buttons + and -, just testing - Done for plus button, but I tend to think that it is shit code, same for minus button
+    # Callback для кнопок + и -. UPD 02:1 18.11
+    # Callback buttons + and -, I tend to think that it is shit code
     if call.data.split(';')[0] == 'fa':
         if call.data.split(';')[2] == '+':
-            print(call.message.text, call.message.message_id, sessions[call.message.chat.id]['last_foods'][call.message.message_id])
-            sys.stdout.flush()
             sessions[call.message.chat.id]['last_foods'][call.message.message_id] += 1
             bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.message_id]))
+        if call.data.split(';')[2] == '-':
+            if sessions[call.message.chat.id]['last_foods'][call.message.message_id] != 0:
+                sessions[call.message.chat.id]['last_foods'][call.message.message_id] -= 1
+                bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.message_id]))
+        print(sessions[call.message.chat.id])
+        sys.stdout.flush()     
 
 # Надо добавить навигацию и корзину
 # Need to add navigation slider and cart
