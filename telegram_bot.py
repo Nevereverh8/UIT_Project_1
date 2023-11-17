@@ -35,22 +35,30 @@ def gen_menu(page, fix_pos=10):
 # Gen food in category
 # 
 # P.S Скорее всего надо будет переделать
-def gen_foods(category, call_message):
-    food_list = get_category(category)
-    for f in food_list:
-        keyb_food = InlineKeyboardMarkup()
-        keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{f[0]};-'), InlineKeyboardButton('Кол-во: 0', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{f[0]};+'))
-        keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{f[0]};')) #Добавить в calldatу кол-во товара, из кнопки кол-во
-        a = bot.send_message(call_message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=keyb_food)
-        sessions[call_message.chat.id]['last_foods'].append({a.message_id: 0})
-    print(food_list)
-    sys.stdout.flush()
+def gen_foods(food, call_message, temp=0):
+    # это проверка чтоб в словаре было фиксированное 
+    # кол-во айдишников блюд чтобы начать работу с кнопками + и -. 
+    # Но пока это херня полная.
+    # 
+    # this checks dict for fixed amount of dishes id, 
+    # to start working with plus and minus button correctly.
+    # But my code is still bullshit 
+    if len(sessions[call_message.chat.id]['last_foods']) < 2:
+        temp = 0
+    else:
+        print(sessions[call_message.chat.id]['last_foods'])
+        temp = sessions[call_message.chat.id]['last_foods'][call_message.message_id]
+    keyb_food = InlineKeyboardMarkup()
+    keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
+    keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{food[0]};')) #Добавить в calldatу кол-во товара, из кнопки кол-во
+    return keyb_food
+   
 
 @bot.message_handler(content_types=['text'])
 def start(message):
     if message.text == '/start':
         sessions[message.chat.id] = {}
-        sessions[message.chat.id]['last_foods'] = []
+        sessions[message.chat.id]['last_foods'] = {}
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
 
 # call back types: can be changed
@@ -85,15 +93,19 @@ def query_handler(call):
     # Позиции в категории
     # Food in category
     if call.data.split('-')[0] == 'c':
-        print(list(gen_foods(call.data.split('-')[1], call.message)))
-        sys.stdout.flush()
+        food_list = get_category(call.data.split('-')[1])
+        for f in food_list:
+            a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message, 0))
+            sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
         
-    # Callback для кнопок + и -, просто тест
-    # Callback buttons + and -, just testing
+    # Callback для кнопок + и -. UPD 14:38 17.11 - готово для кнопки +, но ме кажется очень костыльно. идентично для кнопки -
+    # Callback buttons + and -, just testing - Done for plus button, but I tend to think that it is shit code, same for minus button
     if call.data.split(';')[0] == 'fa':
         if call.data.split(';')[2] == '+':
-            pass
-
+            print(call.message.text, call.message.message_id, sessions[call.message.chat.id]['last_foods'][call.message.message_id])
+            sys.stdout.flush()
+            sessions[call.message.chat.id]['last_foods'][call.message.message_id] += 1
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.message_id]))
 
 # Надо добавить навигацию и корзину
 # Need to add navigation slider and cart
