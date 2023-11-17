@@ -50,6 +50,12 @@ def gen_foods(food, call_message, temp=0):
     keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{food[0]};')) #Добавить в calldatу кол-во товара, из кнопки кол-во
     return keyb_food
    
+# not ready yet, just preparation for next day
+def gen_slider(page):
+    keyb_slider = InlineKeyboardMarkup()
+    keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
+    keyb_slider.add(InlineKeyboardButton('Вырнуться в меню', callback_data='m'))
+    return keyb_slider
 
 @bot.message_handler(content_types=['text'])
 def start(message):
@@ -65,8 +71,8 @@ def start(message):
 #       cn_forward - forward button
 #   c - chosen category
 #   f - chosen food 
-#       f;..;- - amount -1
-#       f;..;+ - amount +1
+#       fa;..;- - amount -1
+#       fa;..;+ - amount +1
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
@@ -94,7 +100,8 @@ def query_handler(call):
         for f in food_list:
             a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message, 0))
             sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
-        
+        bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(1))
+
     # Callback для кнопок + и -. UPD 02:1 18.11
     # Callback buttons + and -, I tend to think that it is shit code
     if call.data.split(';')[0] == 'fa':
