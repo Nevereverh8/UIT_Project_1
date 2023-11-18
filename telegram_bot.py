@@ -1,7 +1,7 @@
 import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
-from db_requests import *
+from db_requests import db
 import sys
 
 # sys.stdout.flush() После принта
@@ -16,7 +16,7 @@ keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m'))
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
 def gen_menu(page, fix_pos=10):
-    categories, keyb_categories = get_categories(), InlineKeyboardMarkup()
+    categories, keyb_categories = db.get_categories(), InlineKeyboardMarkup()
     # Расчет старта и конца для страницы
     # Calculation of the beginning and end of the page
     print(categories)

@@ -1,4 +1,4 @@
-from db_requests import *
+from db_requests import db
 import threading
 from scheduler import Scheduler
 
@@ -22,10 +22,11 @@ def tg():
 # print('hello gays')
 # print(get_categories())
 # print(get_category('Напитки'))
-a = insert_order(1, '14.11.2023 6:51', 1, {"Кока-кола 0.5л в стекле": 2,
-                                           "Фанта 0.5л в стекле": 3})
-print(a)
-with db as con:
+# a = db.insert_order(1, '15.11.2023 6:51', 1, {"Кока-кола 0.5л в стекле": 2,
+#                                            "Фанта 0.5л в стекле": 3})
+# print(a)
+db.del_item('Orders', 3)
+with db.db as con:
     # pass
     print(con.execute('SELECT * FROM Orders').fetchall())
     print(con.execute('SELECT * FROM Order_lists').fetchall())

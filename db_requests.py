@@ -103,137 +103,166 @@ if __name__ == '__main__':
 # further below there will be the most common requests
 # to make it easier to implement this to bots
 
+class DataBase:
+    def __init__(self):
+        global db
+        self.db = db
 
-def get_categories():
-    """
-    Returns list of all categories
-    """
-    with db as con:
-        categories = con.execute('''SELECT name FROM Categories''')
-        categories = categories.fetchall()
-        return [i[0] for i in categories]
+    def get_categories(self):
+        """
+        Returns list of all categories
+        """
+        with self.db as con:
+            categories = con.execute('''SELECT name FROM Categories''')
+            categories = categories.fetchall()
+            return [i[0] for i in categories]
+
+    def get_category(self, category: str):
+        """
+        Returns dict of given category {name: price, ...}
+        """
+        with self.db as con:
+            food = con.execute(f'''
+                                         SELECT name, price FROM Food
+                                         WHERE category_id = (SELECT id FROM Categories
+                                                              WHERE name = '{category}'  AND stop_flag = 0)
+                                         ''')
+            food = food.fetchall()
+            dict_of_food = {}
+            for i in food:
+                dict_of_food[i[0]] = i[1]
+            return food
+
+    def insert_order(self, client_id: int, time_placed: str, admin_id: int, order_list: dict):
+        """
+        Inserts order and order list(shopping cart) to the database.
+        time_placed is "DD.MM.YYYY HH:MM".
+
+        :param order_list: dict {'name': 'amount', ...}
+        :return: delivery time in minutes
+        :rtype: int
+        """
+        with self.db as con:
+            # add order with blank delivery time and total price
+            sql_insert_order = '''INSERT INTO Orders (client_id, time_placed, delivery_time,
+                                                      is_finished, is_aborted, admin_processed,
+                                                      total_price)
+                                  VALUES (?,?,?,?,?,?,?) '''
+            con.execute(sql_insert_order, [client_id, time_placed, ' ', 0, 0, admin_id, 0])
+            order_id = con.execute('SELECT max(id)  from Orders').fetchone()[0]
+
+            # add cart into order list
+            sql_insert_order_list = '''INSERT INTO Order_lists (food_id, amount, order_id)
+                                  VALUES (?,?,?)'''
+            total_price = 0
+            for food, amount in order_list.items():
+                food_id = con.execute(f'''SELECT id FROM Food
+                                   WHERE name = '{food}' ''').fetchone()[0]
+                price = con.execute(f'''SELECT price FROM Food
+                               WHERE id = '{food_id}' ''').fetchone()[0]
+                total_price += price * amount
+                con.execute(sql_insert_order_list, [food_id, amount, order_id])
+
+            # Update order with delivery time and tota price
+            sql_update_order = f'''UPDATE Orders
+                                  SET delivery_time = 30 + (SELECT MAX(cook_time) FROM Food
+                                                       WHERE id IN (SELECT food_id FROM Order_lists
+                                                                         WHERE order_id = '{order_id}'
+                                                                         )
+                                                            ),
+                                      total_price = {total_price}
+                                 WHERE id = {order_id}
+                                   '''
+            con.execute(sql_update_order)
+
+            # return delivery time
+            return con.execute(f'''SELECT delivery_time FROM Orders 
+                           WHERE id = '{order_id}' 
+                           ''').fetchone()[0]
+
+    def get_client(self, client_chat_id: int):
+        """
+         Returns tuple of client data or None if there is no such.
+
+        :return: (id, name, tel, age, adress, chat_type, chat_id) or None
+        :param client_chat_id: id of client chat
+        :rtype: tuple
+        """
+        with self.db as con:
+            client = con.execute(f'''
+                           SELECT * from Clients
+                           WHERE chat_id = {client_chat_id}
+            ''')
+            client = client.fetchone()
+            if client:
+                return client
+            else:
+                return None
+
+    def insert_client(self, name: str, tel: int, age: int, adress: str, chat_type: str, chat_id: int):
+        """
+        If client in database - retruns id, if not - adds and return id
+
+        :param chat_type: VK or TG
+        :return: id of inserted client
+        :rtype: int
+        """
+        with self.db as con:
+            a = con.execute(f'''
+                                   SELECT * from Clients
+                                   WHERE chat_id = {chat_id}
+                    ''').fetchone()
+            if a:
+                client_id = a[0]
+            else:
+                con.execute(f'''INSERT INTO Clients (name, tel, age, adress, chat_type, chat_id)
+                                  VALUES ('{name}', {tel}, {age}, '{adress}', '{chat_type}', {chat_id}) ''')
+                client_id = con.execute('''SELECT max(id) FROM Clients''').fetchone()[0]
+            return client_id
+
+    def stop_food(self, food_name):
+        with self.db as con:
+            con.execute(f'''UPDATE Food
+                            SET stop_flag = 1 
+                            WHERE name = '{food_name}' ''')
+
+    def unstop_food(self, food_name):
+        with self.db as con:
+            con.execute(f'''UPDATE Food
+                            SET stop_flag = 0 
+                            WHERE name = '{food_name}' ''')
+
+    def get_item(self, table: str,  value: any, by='id'):
+        """
+        Returns record from table by any given field (by id as default)
+
+        :rtype: tuple
+        """
+        if type(value) == str:
+            value = "'"+value+"'"
+        with self.db as con:
+            return con.execute(f'''SELECT * FROM {table}
+                            WHERE {by} = {value}''').fetchall()
+
+    def update_cell(self, table: str, id: int, param: str, value: any):
+        """
+        Sets parameter(param) of item(by id) in table(table) to (value)
+        """
+        if type(value) == str:
+            value = "'"+value+"'"
+        with self.db as con:
+            con.execute(f'''UPDATE {table}
+                            SET '{param}' = {value}
+                            WHERE id = {id} ''')
+
+    def del_item(self, table: str, id: int):
+        """
+        Deletes record from table by id
+        """
+        with self.db as con:
+            con.execute(f'''DELETE FROM {table}
+                            WHERE id = {id}''')
 
 
-def get_category(category: str):
-    """
-    Returns dict of given category {name: price, ...}
-    """
-    with db as con:
-        food = con.execute(f'''
-                                     SELECT name, price FROM Food
-                                     WHERE category_id = (SELECT id FROM Categories
-                                                          WHERE name = '{category}'  AND stop_flag = 0)
-                                     ''')
-        food = food.fetchall()
-        dict_of_food = {}
-        for i in food:
-            dict_of_food[i[0]] = i[1]
-        return food
-
-
-def insert_order(client_id: int, time_placed: str, admin_id: int, order_list: dict):
-    """
-    Inserts order and order list(shopping cart) to the database.
-    time_placed is "DD.MM.YYYY HH:MM".
-
-    :param order_list: dict {'name': 'amount', ...}
-    :return: delivery time in minutes
-    :rtype: int
-    """
-    with db as con:
-        # add order with blank delivery time and total price
-        sql_insert_order = '''INSERT INTO Orders (client_id, time_placed, delivery_time,
-                                                  is_finished, is_aborted, admin_processed,
-                                                  total_price)
-                              VALUES (?,?,?,?,?,?,?) '''
-        con.execute(sql_insert_order, [client_id, time_placed, ' ', 0, 0, admin_id, 0])
-        order_id = con.execute('SELECT max(id)  from Orders').fetchone()[0]
-
-        # add cart into order list
-        sql_insert_order_list = '''INSERT INTO Order_lists (food_id, amount, order_id)
-                              VALUES (?,?,?)'''
-        total_price = 0
-        for food, amount in order_list.items():
-            food_id = con.execute(f'''SELECT id FROM Food
-                               WHERE name = '{food}' ''').fetchone()[0]
-            price = con.execute(f'''SELECT price FROM Food
-                           WHERE id = '{food_id}' ''').fetchone()[0]
-            total_price += price * amount
-            con.execute(sql_insert_order_list, [food_id, amount, order_id])
-
-        # Update order with delivery time and tota price
-        sql_update_order = f'''UPDATE Orders
-                              SET delivery_time = 30 + (SELECT MAX(cook_time) FROM Food
-                                                   WHERE id IN (SELECT food_id FROM Order_lists
-                                                                     WHERE order_id = '{order_id}'
-                                                                     )
-                                                        ),
-                                  total_price = {total_price}
-                             WHERE id = {order_id}
-                               '''
-        con.execute(sql_update_order)
-
-        # return delivery time
-        return con.execute(f'''SELECT delivery_time FROM Orders 
-                       WHERE id = '{order_id}' 
-                       ''').fetchone()[0]
-
-
-def get_client(client_chat_id: int):
-    """
-     Returns tuple of client data or None if there is no such.
-
-    :return: (id, name, tel, age, adress, chat_type, chat_id) or None
-    :param client_chat_id: id of client chat
-    :rtype: tuple
-    """
-    with db as con:
-        client = con.execute(f'''
-                       SELECT * from Clients
-                       WHERE chat_id = {client_chat_id}
-        ''')
-        client = client.fetchone()
-        if client:
-            return client
-        else:
-            return None
-
-
-def insert_client(name, tel, age, adress, chat_type, chat_id):
-    """
-    If client in database - retruns id, if not - adds and return id
-
-    :param chat_type: VK or TG
-    :return: id of client
-    :rtype: int
-    """
-    with db as con:
-        a = con.execute(f'''
-                               SELECT * from Clients
-                               WHERE chat_id = {chat_id}
-                ''').fetchone()
-        if a:
-            client_id = a[0]
-        else:
-            con.execute(f'''INSERT INTO Clients (name, tel, age, adress, chat_type, chat_id)
-                              VALUES ('{name}', {tel}, {age}, '{adress}', '{chat_type}', {chat_id}) ''')
-            client_id = con.execute('''SELECT max(id) FROM Clients''').fetchone()[0]
-        return client_id
-
-
-def stop_food(food_name):
-    with db as con:
-        con.execute(f'''UPDATE Food
-                        SET stop_flag = 1 
-                        WHERE name = '{food_name}' ''')
-
-
-def unstop_food(food_name):
-    with db as con:
-        con.execute(f'''UPDATE Food
-                        SET stop_flag = 0 
-                        WHERE name = '{food_name}' ''')
-
-
-
+db = DataBase()
 
