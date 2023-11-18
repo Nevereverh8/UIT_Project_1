@@ -33,8 +33,6 @@ def gen_menu(page, fix_pos=10):
 
 # Генерирует позиции в котегории ps без слайдера
 # Gen food in category
-# 
-# P.S Скорее всего надо будет переделать
 def gen_foods(food, call_message, temp=0):
     # это проверка чтоб в словаре было фиксированное 
     # кол-во айдишников блюд чтобы начать работу с кнопками + и -. 
@@ -46,13 +44,18 @@ def gen_foods(food, call_message, temp=0):
     if len(sessions[call_message.chat.id]['last_foods']) < 2:
         temp = 0
     else:
-        print(sessions[call_message.chat.id]['last_foods'])
         temp = sessions[call_message.chat.id]['last_foods'][call_message.message_id]
     keyb_food = InlineKeyboardMarkup()
     keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
     keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{food[0]};')) #Добавить в calldatу кол-во товара, из кнопки кол-во
     return keyb_food
    
+# not ready yet, just preparation for next day
+def gen_slider(page):
+    keyb_slider = InlineKeyboardMarkup()
+    keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
+    keyb_slider.add(InlineKeyboardButton('Вырнуться в меню', callback_data='m'))
+    return keyb_slider
 
 @bot.message_handler(content_types=['text'])
 def start(message):
@@ -68,8 +71,8 @@ def start(message):
 #       cn_forward - forward button
 #   c - chosen category
 #   f - chosen food 
-#       f;..;- - amount -1
-#       f;..;+ - amount +1
+#       fa;..;- - amount -1
+#       fa;..;+ - amount +1
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
@@ -97,15 +100,20 @@ def query_handler(call):
         for f in food_list:
             a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message, 0))
             sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
-        
-    # Callback для кнопок + и -. UPD 14:38 17.11 - готово для кнопки +, но ме кажется очень костыльно. идентично для кнопки -
-    # Callback buttons + and -, just testing - Done for plus button, but I tend to think that it is shit code, same for minus button
+        bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(1))
+
+    # Callback для кнопок + и -. UPD 02:1 18.11
+    # Callback buttons + and -, I tend to think that it is shit code
     if call.data.split(';')[0] == 'fa':
         if call.data.split(';')[2] == '+':
-            print(call.message.text, call.message.message_id, sessions[call.message.chat.id]['last_foods'][call.message.message_id])
-            sys.stdout.flush()
             sessions[call.message.chat.id]['last_foods'][call.message.message_id] += 1
             bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.message_id]))
+        if call.data.split(';')[2] == '-':
+            if sessions[call.message.chat.id]['last_foods'][call.message.message_id] != 0:
+                sessions[call.message.chat.id]['last_foods'][call.message.message_id] -= 1
+                bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.message_id]))
+        print(sessions[call.message.chat.id])
+        sys.stdout.flush()     
 
 # Надо добавить навигацию и корзину
 # Need to add navigation slider and cart
