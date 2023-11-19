@@ -116,7 +116,7 @@ def query_handler(call):
         print(sessions[call.message.chat.id])
         sys.stdout.flush()     
 
-# Надо добавить навигацию и корзину
+# Надо добавить навигацию и корзину.
 # Need to add navigation slider and cart
 
 print("Ready")
