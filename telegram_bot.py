@@ -41,21 +41,23 @@ def gen_foods(food, call_message, temp=0):
     # this checks dict for fixed amount of dishes id, 
     # to start working with plus and minus button correctly.
     # But my code is still bullshit 
-    if len(sessions[call_message.chat.id]['last_foods']) < 2:
+    if len(sessions[call_message.chat.id]['last_foods']) < 1:
         temp = 0
     else:
-        temp = sessions[call_message.chat.id]['last_foods'][call_message.message_id]
+        temp = sessions[call_message.chat.id]['last_foods'][call_message.text]
     keyb_food = InlineKeyboardMarkup()
     keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
     keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{food[0]};')) #Добавить в calldatу кол-во товара, из кнопки кол-во
     return keyb_food
    
 # not ready yet, just preparation for next day
-def gen_slider(page):
+def gen_slider(page, fix_pos=1):
+    start = fix_pos*(page-1)
+    end = start + fix_pos
     keyb_slider = InlineKeyboardMarkup()
     keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
-    keyb_slider.add(InlineKeyboardButton('Вырнуться в меню', callback_data='m'))
-    return keyb_slider
+    keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m'))
+    return keyb_slider, start, end, page
 
 @bot.message_handler(content_types=['text'])
 def start(message):
@@ -98,23 +100,37 @@ def query_handler(call):
     # Food in category
     if call.data.split('-')[0] == 'c':
         food_list = db.get_category(call.data.split('-')[1])
-        for f in food_list:
+        slider = gen_slider(1)
+        print(slider[1], slider[2])
+        sys.stdout.flush()
+        for f in food_list[slider[1]:slider[2]]:
             a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message, 0))
-            sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
-        bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(1))
+            # sessions[call.message.chat.id]['last_foods'][a.text] = 0
+        bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
     # Callback для кнопок + и -. UPD 02:1 18.11
     # Callback buttons + and -, I tend to think that it is shit code
     if call.data.split(';')[0] == 'fa':
         if call.data.split(';')[2] == '+':
-            sessions[call.message.chat.id]['last_foods'][call.message.message_id] += 1
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.message_id]))
+            if call.message.text in sessions[call.message.chat.id]['last_foods']:
+                sessions[call.message.chat.id]['last_foods'][call.message.text] += 1
+            else:
+                sessions[call.message.chat.id]['last_foods'][call.message.text] = 1
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.text]))
         if call.data.split(';')[2] == '-':
-            if sessions[call.message.chat.id]['last_foods'][call.message.message_id] != 0:
-                sessions[call.message.chat.id]['last_foods'][call.message.message_id] -= 1
-                bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.message_id]))
+            if call.message.text in sessions[call.message.chat.id]['last_foods']:
+                sessions[call.message.chat.id]['last_foods'][call.message.text] -= 1
+                bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.text]))
+                if sessions[call.message.chat.id]['last_foods'][call.message.text] == 0:
+                    sessions[call.message.chat.id]['last_foods'].pop(call.message.text)
         print(sessions[call.message.chat.id])
-        sys.stdout.flush()     
+        sys.stdout.flush()    
+
+    if call.data.split(';')[0] == 'fn':
+        if call.data.split(';')[1] == 'forward':
+            slider = gen_slider(int(call.data.split(';')[2]) + 1)
+            # Надо записать в sessions айдишники сообщений чтобы реализовать слайдер. 
+            # возможно надо переделать ключи чтобы было понятно что есть что. 14:38 19.11
 
 # Надо добавить навигацию и корзину.
 # Need to add navigation slider and cart
