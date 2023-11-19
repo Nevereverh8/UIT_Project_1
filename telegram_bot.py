@@ -62,6 +62,7 @@ def start(message):
     if message.text == '/start':
         sessions[message.chat.id] = {}
         sessions[message.chat.id]['last_foods'] = {}
+        sessions[message.chat.id]['cart'] = {}
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
 
 # call back types: can be changed
@@ -96,7 +97,7 @@ def query_handler(call):
     # Позиции в категории
     # Food in category
     if call.data.split('-')[0] == 'c':
-        food_list = get_category(call.data.split('-')[1])
+        food_list = db.get_category(call.data.split('-')[1])
         for f in food_list:
             a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message, 0))
             sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
