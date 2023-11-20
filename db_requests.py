@@ -131,7 +131,7 @@ class DataBase:
             dict_of_food = {}
             for i in food:
                 dict_of_food[i[0]] = i[1]
-            return food
+            return dict_of_food
 
     def insert_order(self, client_id: int, time_placed: str, admin_id: int, order_list: dict):
         """
