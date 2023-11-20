@@ -33,24 +33,16 @@ def gen_menu(page, fix_pos=10):
 
 # Генерирует позиции в котегории ps без слайдера
 # Gen food in category
-def gen_foods(food, call_message, temp=0):
-    # это проверка чтоб в словаре было фиксированное 
-    # кол-во айдишников блюд чтобы начать работу с кнопками + и -. 
-    # Но пока это херня полная.
-    # 
-    # this checks dict for fixed amount of dishes id, 
-    # to start working with plus and minus button correctly.
-    # But my code is still bullshit 
-    if len(sessions[call_message.chat.id]['last_foods']) < 1:
-        temp = 0
-    else:
-        temp = sessions[call_message.chat.id]['last_foods'][call_message.text]
+def gen_foods(food, chat_id, message_text, temp=0):
+    if message_text in sessions[chat_id]['cart']:
+        temp = sessions[chat_id]['cart'][message_text]
     keyb_food = InlineKeyboardMarkup()
     keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
     keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{food[0]};')) #Добавить в calldatу кол-во товара, из кнопки кол-во
     return keyb_food
    
-# not ready yet, just preparation for next day
+# Отдельный слайдер для блюд в категории
+# Unique slider for dishes in categories
 def gen_slider(page, fix_pos=1):
     start = fix_pos*(page-1)
     end = start + fix_pos
@@ -65,6 +57,7 @@ def start(message):
         sessions[message.chat.id] = {}
         sessions[message.chat.id]['last_foods'] = {}
         sessions[message.chat.id]['cart'] = {}
+        sessions[message.chat.id]['food_list'] = []
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
 
 # call back types: can be changed
@@ -76,6 +69,8 @@ def start(message):
 #   f - chosen food 
 #       fa;..;- - amount -1
 #       fa;..;+ - amount +1
+#       fn-forward-'page' - next page
+#       fn-back-'page' - previus page
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
@@ -99,41 +94,53 @@ def query_handler(call):
     # Позиции в категории
     # Food in category
     if call.data.split('-')[0] == 'c':
-        food_list = db.get_category(call.data.split('-')[1])
+        sessions[call.message.chat.id]['food_list'] = db.get_category(call.data.split('-')[1])
         slider = gen_slider(1)
         print(slider[1], slider[2])
         sys.stdout.flush()
-        for f in food_list[slider[1]:slider[2]]:
-            a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message, 0))
-            # sessions[call.message.chat.id]['last_foods'][a.text] = 0
+        for f in sessions[call.message.chat.id]['food_list'][slider[1]:slider[2]]:
+            a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message.chat.id, call.message.text, 0))
+            sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
     # Callback для кнопок + и -. UPD 02:1 18.11
     # Callback buttons + and -, I tend to think that it is shit code
     if call.data.split(';')[0] == 'fa':
         if call.data.split(';')[2] == '+':
-            if call.message.text in sessions[call.message.chat.id]['last_foods']:
-                sessions[call.message.chat.id]['last_foods'][call.message.text] += 1
+            if call.message.text in sessions[call.message.chat.id]['cart']:
+                sessions[call.message.chat.id]['cart'][call.message.text] += 1
             else:
-                sessions[call.message.chat.id]['last_foods'][call.message.text] = 1
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.text]))
+                sessions[call.message.chat.id]['cart'][call.message.text] = 1
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message.chat.id, call.message.text, sessions[call.message.chat.id]['cart'][call.message.text]))
         if call.data.split(';')[2] == '-':
-            if call.message.text in sessions[call.message.chat.id]['last_foods']:
-                sessions[call.message.chat.id]['last_foods'][call.message.text] -= 1
-                bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message, sessions[call.message.chat.id]['last_foods'][call.message.text]))
-                if sessions[call.message.chat.id]['last_foods'][call.message.text] == 0:
-                    sessions[call.message.chat.id]['last_foods'].pop(call.message.text)
+            if call.message.text in sessions[call.message.chat.id]['cart']:
+                sessions[call.message.chat.id]['cart'][call.message.text] -= 1
+                bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message.chat.id, call.message.text, sessions[call.message.chat.id]['cart'][call.message.text]))
+                if sessions[call.message.chat.id]['cart'][call.message.text] == 0:
+                    sessions[call.message.chat.id]['cart'].pop(call.message.text)
         print(sessions[call.message.chat.id])
         sys.stdout.flush()    
 
-    if call.data.split(';')[0] == 'fn':
-        if call.data.split(';')[1] == 'forward':
-            slider = gen_slider(int(call.data.split(';')[2]) + 1)
-            # Надо записать в sessions айдишники сообщений чтобы реализовать слайдер. 
-            # возможно надо переделать ключи чтобы было понятно что есть что. 14:38 19.11
-
-# Надо добавить навигацию и корзину.
-# Need to add navigation slider and cart
+    # Переключение страниц блюд в категории с помощью слайдера
+    # Switching dishes pages in categories with help of slider
+    if call.data.split('-')[0] == 'fn':
+        if call.data.split('-')[1] == 'forward':
+            slider = gen_slider(int(call.data.split('-')[2])+1)
+            for f in sessions[call.message.chat.id]['food_list'][slider[1]:slider[2]]:
+                for id in sessions[call.message.chat.id]['last_foods']: 
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}')) 
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Навигация', reply_markup=gen_slider(slider[3])[0])
+                    break
+        if call.data.split('-')[1] == 'back':
+            slider = gen_slider(int(call.data.split('-')[2])-1)
+            for f in sessions[call.message.chat.id]['food_list'][slider[1]:slider[2]]:
+                for id in sessions[call.message.chat.id]['last_foods']:
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}')) 
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Навигация', reply_markup=gen_slider(slider[3])[0])
+                    break
+           
+# Надо добавить корзину.
+# Need to add cart
 
 print("Ready")
 
