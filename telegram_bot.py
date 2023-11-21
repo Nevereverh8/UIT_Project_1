@@ -90,22 +90,21 @@ def query_handler(call):
     if call.data.split('-')[0] == 'm':
         # Удаляет сообщения возвращая пользователя в меню
         # Delete message returning the user to menu
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        
         if call.data.split('-')[1] == 'm':
             if sessions[call.message.chat.id]['last_foods'] != {}:
-                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
                 for item in sessions[call.message.chat.id]['last_foods']:
                     bot.delete_message(chat_id=call.message.chat.id, message_id=item)
                 sessions[call.message.chat.id]['last_foods'] = {}
-            else:
-                a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
-                sessions[call.message.chat.id]['last_message_menu'] = a.message_id
         if call.data.split('-')[1] == 'c':
-            if sessions[call.message.chat.id]['cart_ids']:
-                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            if sessions[call.message.chat.id]['cart_ids'] != []:
                 for item in sessions[call.message.chat.id]['cart_ids']:
                     bot.delete_message(chat_id=call.message.chat.id, message_id=item)
                 sessions[call.message.chat.id]['cart_ids'] = []
-
+        a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
+        sessions[call.message.chat.id]['last_message_menu'] = a.message_id
+        
     # Cлайдер листает странцы
     # Slider to change pages
     if call.data.split('-')[0] == 'cn':
@@ -121,6 +120,9 @@ def query_handler(call):
     # Позиции в категории
     # Food in category
     if call.data.split('-')[0] == 'c':
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        for id in sessions[call.message.chat.id]['last_foods']:
+            bot.delete_message(chat_id=call.message.chat.id, message_id=id)
         sessions[call.message.chat.id]['food_list'] = db.get_category(call.data.split('-')[1])
         slider = gen_slider(1)
         food_list = sessions[call.message.chat.id]['food_list']
@@ -150,22 +152,24 @@ def query_handler(call):
     # Switching dishes pages in categories with help of slider
     if call.data.split('-')[0] == 'fn':
         if call.data.split('-')[1] == 'forward':
-            slider = gen_slider(int(call.data.split('-')[2])+1)
-            food_list = sessions[call.message.chat.id]['food_list']
-            for f in list(food_list.keys())[slider[1]:slider[2]]:
-                for id in sessions[call.message.chat.id]['last_foods']: 
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id)) 
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Навигация', reply_markup=gen_slider(slider[3])[0])
-                    break
-        if call.data.split('-')[1] == 'back':
-            slider = gen_slider(int(call.data.split('-')[2])-1,)
-            food_list = sessions[call.message.chat.id]['food_list']
-            for f in list(food_list.keys())[slider[1]:slider[2]]:
-                for id in sessions[call.message.chat.id]['last_foods']:
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id)) 
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Навигация', reply_markup=gen_slider(slider[3])[0])
-                    break
+            slider = gen_slider(int(call.data.split('-')[2])+1)                 
+        elif call.data.split('-')[1] == 'back':
+            slider = gen_slider(int(call.data.split('-')[2])-1)
+        food_list = sessions[call.message.chat.id]['food_list']
+        last_foods = sessions[call.message.chat.id]['last_foods']
+        
+        for id in last_foods: 
+            print(sessions[call.message.chat.id]['last_foods'], id)
+            sys.stdout.flush()
+            bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        sessions[call.message.chat.id]['last_foods'] = {}
 
+        for f in list(food_list.keys())[slider[1]:slider[2]]:
+            a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id))
+            sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+        bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3])[0])
+            
     if call.data.split(';')[0] == 'f':
         sessions[call.message.chat.id]['real_cart'][call.message.text] = int(call.data.split(';')[1])
         print(sessions[call.message.chat.id]['real_cart'])
@@ -173,6 +177,11 @@ def query_handler(call):
     
     if call.data == 'cart':
         # just testing for future updates
+        for id in sessions[call.message.chat.id]['last_foods']:
+            bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        sessions[call.message.chat.id]['last_foods'] = {}
+
         if call.data == 'cart amongus':
             with open(r'photos\amogus.jpg', 'rb') as f:
                 a = bot.send_photo(call.message.chat.id, f, 'amogus')
