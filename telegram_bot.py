@@ -48,7 +48,7 @@ def gen_foods(food, chat_id, temp=0, name='foods'):
    
 # Отдельный слайдер для блюд в категории
 # Unique slider for dishes in categories
-def gen_slider(page, fix_pos=1, name = 'foods'):
+def gen_slider(page, fix_pos=2, name = 'foods'):
     start = fix_pos*(page-1)
     end = start + fix_pos
     if name == 'foods':
