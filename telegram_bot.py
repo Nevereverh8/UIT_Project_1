@@ -106,10 +106,9 @@ def query_handler(call):
     if call.data.split('-')[0] == 'c':
         sessions[call.message.chat.id]['food_list'] = db.get_category(call.data.split('-')[1])
         slider = gen_slider(1)
-        print(slider[1], slider[2])
-        sys.stdout.flush()
-        for f in sessions[call.message.chat.id]['food_list'][slider[1]:slider[2]]:
-            a = bot.send_message(call.message.chat.id, f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message.chat.id, 0))
+        food_list = sessions[call.message.chat.id]['food_list']
+        for f in list(food_list.keys())[slider[1]:slider[2]]:
+            a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
             sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
@@ -135,16 +134,18 @@ def query_handler(call):
     if call.data.split('-')[0] == 'fn':
         if call.data.split('-')[1] == 'forward':
             slider = gen_slider(int(call.data.split('-')[2])+1)
-            for f in sessions[call.message.chat.id]['food_list'][slider[1]:slider[2]]:
+            food_list = sessions[call.message.chat.id]['food_list']
+            for f in list(food_list.keys())[slider[1]:slider[2]]:
                 for id in sessions[call.message.chat.id]['last_foods']: 
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message.chat.id)) 
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id)) 
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Навигация', reply_markup=gen_slider(slider[3])[0])
                     break
         if call.data.split('-')[1] == 'back':
             slider = gen_slider(int(call.data.split('-')[2])-1)
-            for f in sessions[call.message.chat.id]['food_list'][slider[1]:slider[2]]:
+            food_list = sessions[call.message.chat.id]['food_list']
+            for f in list(food_list.keys())[slider[1]:slider[2]]:
                 for id in sessions[call.message.chat.id]['last_foods']:
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f[0]} цена за шт. - {f[1]}', reply_markup=gen_foods(f, call.message.chat.id)) 
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id)) 
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Навигация', reply_markup=gen_slider(slider[3])[0])
                     break
     if call.data.split(';')[0] == 'f':
@@ -157,8 +158,7 @@ def query_handler(call):
            a = bot.send_photo(call.message.chat.id, f, 'amogus')
            print(a.photo[0].file_id)
            sys.stdout.flush()
-        
-        bot.send_photo(call.message.chat.id, a.photo[0].file_id, 'amogus2')
+        bot.edit_message_caption('amogud edited', call.message.chat.id, a.message_id)
 
            
 # Надо добавить корзину.
