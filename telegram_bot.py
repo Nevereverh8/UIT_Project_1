@@ -11,7 +11,7 @@ bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
 sessions = {}
 
 keyb_menu = InlineKeyboardMarkup()
-keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m'))
+keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-m'))
 
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
@@ -33,23 +33,32 @@ def gen_menu(page, fix_pos=10):
 
 # Генерирует позиции в котегории ps без слайдера
 # Gen food in category
-def gen_foods(food, chat_id, temp=0):
+def gen_foods(food, chat_id, temp=0, name='foods'):
     dish = f'{food[0]} цена за шт. - {food[1]}'
-    if dish in sessions[chat_id]['cart']:
-        temp = sessions[chat_id]['cart'][dish]
     keyb_food = InlineKeyboardMarkup()
-    keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
-    keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{food[0]};{temp}')) #Добавить в calldatу кол-во товара, из кнопки кол-во
+    if name == 'foods':
+        if dish in sessions[chat_id]['cart']:
+            temp = sessions[chat_id]['cart'][dish]
+        keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
+        keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{food[0]};{temp}')) #Добавить в calldatу кол-во товара, из кнопки кол-во
+    elif name == 'cart':
+        temp = sessions[chat_id]['real_cart'][food]
+        keyb_food.add(InlineKeyboardButton('-', callback_data=f'crta;-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data=temp),InlineKeyboardButton('+', callback_data=f'crta;+'))
     return keyb_food
    
 # Отдельный слайдер для блюд в категории
 # Unique slider for dishes in categories
-def gen_slider(page, fix_pos=1):
+def gen_slider(page, fix_pos=1, name = 'foods'):
     start = fix_pos*(page-1)
     end = start + fix_pos
-    keyb_slider = InlineKeyboardMarkup()
-    keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Корзина', callback_data='cart'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
-    keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m'))
+    if name == 'foods':
+        keyb_slider = InlineKeyboardMarkup()
+        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Корзина', callback_data='cart'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
+        keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m-m'))
+    elif name == 'cart':
+        keyb_slider = InlineKeyboardMarkup()
+        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'crt-back-{page}'), InlineKeyboardButton('Вперед', callback_data=f'crt-forward-{page}'))
+        keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m-c'))
     return keyb_slider, start, end, page
 
 @bot.message_handler(content_types=['text'])
@@ -58,8 +67,9 @@ def start(message):
         sessions[message.chat.id] = {}
         sessions[message.chat.id]['last_foods'] = {}
         sessions[message.chat.id]['cart'] = {}
-        sessions[message.chat.id]['food_list'] = []
+        sessions[message.chat.id]['food_list'] = [] #Удалить потом
         sessions[message.chat.id]['real_cart'] = {}
+        sessions[message.chat.id]['cart_ids'] = []
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
 
 # call back types: can be changed
@@ -77,17 +87,24 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
     bot.answer_callback_query(callback_query_id=call.id)
-    if call.data == 'm':
+    if call.data.split('-')[0] == 'm':
         # Удаляет сообщения возвращая пользователя в меню
         # Delete message returning the user to menu
-        if sessions[call.message.chat.id]['last_foods'] != {}:
-            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            for item in sessions[call.message.chat.id]['last_foods']:
-                bot.delete_message(chat_id=call.message.chat.id, message_id=item)
-            sessions[call.message.chat.id]['last_foods'] = {}
-        else:
-            a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
-            sessions[call.message.chat.id]['last_message_menu'] = a.message_id
+        if call.data.split('-')[1] == 'm':
+            if sessions[call.message.chat.id]['last_foods'] != {}:
+                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                for item in sessions[call.message.chat.id]['last_foods']:
+                    bot.delete_message(chat_id=call.message.chat.id, message_id=item)
+                sessions[call.message.chat.id]['last_foods'] = {}
+            else:
+                a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
+                sessions[call.message.chat.id]['last_message_menu'] = a.message_id
+        if call.data.split('-')[1] == 'c':
+            if sessions[call.message.chat.id]['cart_ids']:
+                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                for item in sessions[call.message.chat.id]['cart_ids']:
+                    bot.delete_message(chat_id=call.message.chat.id, message_id=item)
+                sessions[call.message.chat.id]['cart_ids'] = []
 
     # Cлайдер листает странцы
     # Slider to change pages
@@ -154,12 +171,24 @@ def query_handler(call):
         sys.stdout.flush() 
     
     if call.data == 'cart':
-        with open(r'photos\amogus.jpg', 'rb') as f:
-           a = bot.send_photo(call.message.chat.id, f, 'amogus')
-           print(a.photo[0].file_id)
-           sys.stdout.flush()
-        bot.edit_message_caption('amogud edited', call.message.chat.id, a.message_id)
-
+        # just testing for future updates
+        if call.data == 'cart amongus':
+            with open(r'photos\amogus.jpg', 'rb') as f:
+                a = bot.send_photo(call.message.chat.id, f, 'amogus')
+                print(a.photo[0].file_id)
+                sys.stdout.flush()
+            bot.edit_message_caption('amogud edited', call.message.chat.id, a.message_id)
+        else:
+            slider = gen_slider(1, name='cart')
+            a = bot.send_message(call.message.chat.id, 'Корзина', reply_markup=None)
+            sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
+            cart_items = sessions[call.message.chat.id]['real_cart']
+            for item in list(cart_items.keys())[slider[1]:slider[2]]:
+                a = bot.send_message(call.message.chat.id, item, reply_markup=gen_foods(item, call.message.chat.id, name='cart', temp= cart_items[item]))
+                sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
+            print(sessions[call.message.chat.id]['cart_ids'])
+            sys.stdout.flush()
+            bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
            
 # Надо добавить корзину.
 # Need to add cart
