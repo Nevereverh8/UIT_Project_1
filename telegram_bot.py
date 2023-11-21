@@ -151,6 +151,14 @@ def query_handler(call):
         sessions[call.message.chat.id]['real_cart'][call.message.text] = call.data.split(';')[2]
         print(sessions[call.message.chat.id]['real_cart'])
         sys.stdout.flush() 
+    
+    if call.data == 'cart':
+        with open(r'photos\amogus.jpg', 'rb') as f:
+           a = bot.send_photo(call.message.chat.id, f, 'amogus')
+           print(a.photo[0].file_id)
+           sys.stdout.flush()
+        
+        bot.send_photo(call.message.chat.id, a.photo[0].file_id, 'amogus2')
 
            
 # Надо добавить корзину.
