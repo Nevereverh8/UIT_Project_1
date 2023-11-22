@@ -87,6 +87,8 @@ def start(message):
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
     bot.answer_callback_query(callback_query_id=call.id)
+    print(call.data)
+    sys.stdout.flush()
     if call.data.split('-')[0] == 'm':
         # Удаляет сообщения возвращая пользователя в меню
         # Delete message returning the user to menu
@@ -171,7 +173,8 @@ def query_handler(call):
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3])[0])
             
     if call.data.split(';')[0] == 'f':
-        sessions[call.message.chat.id]['real_cart'][call.message.text] = int(call.data.split(';')[1])
+        if call.data.split(';')[1] != '0':
+            sessions[call.message.chat.id]['real_cart'][call.message.text] = int(call.data.split(';')[1])
         print(sessions[call.message.chat.id]['real_cart'])
         sys.stdout.flush() 
     
@@ -196,8 +199,6 @@ def query_handler(call):
             for item in list(cart_items.keys())[slider[1]:slider[2]]:
                 a = bot.send_message(call.message.chat.id, item, reply_markup=gen_foods(item, call.message.chat.id, name='cart', temp=cart_items[item]))
                 sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
-            print(sessions[call.message.chat.id]['cart_ids'])
-            sys.stdout.flush()
             bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
            
     if call.data.split('-')[0] == 'crt':
@@ -206,10 +207,16 @@ def query_handler(call):
             slider = gen_slider(int(call.data.split('-')[2])+1, name='cart')
         elif call.data.split('-')[1] == 'back':
             slider = gen_slider(int(call.data.split('-')[2])-1, name='cart')
+        
+        for id in sessions[call.message.chat.id]['cart_ids'][1:]:
+            bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        sessions[call.message.chat.id]['cart_ids'] = [sessions[call.message.chat.id]['cart_ids'][0]]
+
         for item in list(cart_items.keys())[slider[1]:slider[2]]:
-            for id in sessions[call.message.chat.id]['cart_ids'][1:]:
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=id, text=item, reply_markup=gen_foods(item, call.message.chat.id, name='cart', temp=cart_items[item]))
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text='Навигация', reply_markup=gen_slider(slider[3], name='cart')[0])
+            a = bot.send_message(call.message.chat.id, item, reply_markup=gen_foods(item, call.message.chat.id, name='cart', temp=cart_items[item]))
+            sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
+        bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
     if call.data.split(';')[0] == 'crta':
         if call.data.split(';')[1] == '+':
