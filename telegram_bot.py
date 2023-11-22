@@ -196,12 +196,12 @@ def query_handler(call):
         sys.stdout.flush() 
     
     if call.data == 'cart':
-        # just testing for future updates
+       
         for id in sessions[call.message.chat.id]['last_foods']:
             bot.delete_message(chat_id=call.message.chat.id, message_id=id)
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         sessions[call.message.chat.id]['last_foods'] = {}
-
+        # just testing for future updates  
         if call.data == 'cart amongus':
             with open(r'photos\amogus.jpg', 'rb') as f:
                 a = bot.send_photo(call.message.chat.id, f, 'amogus')
@@ -252,7 +252,6 @@ def query_handler(call):
                     # нужно ли сразу удалять позицию из корзины, когда кол-во = 0
     
     if call.data.split('-')[0] == 'o':
-        # bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         order_message = ''
         price = 0
         for item in sessions[call.message.chat.id]['real_cart']:
