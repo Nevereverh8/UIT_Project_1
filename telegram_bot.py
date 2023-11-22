@@ -171,7 +171,9 @@ def query_handler(call):
             a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id))
             sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3])[0])
-            
+
+    # Добавление позиций в корзину    
+    # Adding dishes in cart
     if call.data.split(';')[0] == 'f':
         if call.data.split(';')[1] != '0':
             sessions[call.message.chat.id]['real_cart'][call.message.text] = int(call.data.split(';')[1])
@@ -201,6 +203,8 @@ def query_handler(call):
                 sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
             bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
            
+    # Навигация по корзине
+    # Cart navigation
     if call.data.split('-')[0] == 'crt':
         cart_items = sessions[call.message.chat.id]['real_cart']
         if call.data.split('-')[1] == 'forward':
@@ -218,6 +222,8 @@ def query_handler(call):
             sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
+    # Изменение кол-ва позиций в корзине
+    # Edding amount of dishes in cart
     if call.data.split(';')[0] == 'crta':
         if call.data.split(';')[1] == '+':
             sessions[call.message.chat.id]['real_cart'][call.message.text] += 1
