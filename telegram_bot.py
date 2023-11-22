@@ -13,6 +13,14 @@ sessions = {}
 keyb_menu = InlineKeyboardMarkup()
 keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-m'))
 
+key_order = InlineKeyboardMarkup()
+key_order.add(InlineKeyboardButton('Изменить заказ', callback_data='cart'), InlineKeyboardButton('Продолжить', callback_data='o-next'))
+
+keyb_order_card = InlineKeyboardMarkup()
+keyb_order_card.add(InlineKeyboardButton('Изменить заказ', callback_data='cart'), InlineKeyboardButton('Завершить оформление заказа', callback_data='о-finish'))
+
+keyb_finish = InlineKeyboardMarkup()
+keyb_finish.add(InlineKeyboardButton('Изменить заказ', callback_data='cart'), InlineKeyboardButton('Изменить адрес доставки', callback_data='o-o'),  InlineKeyboardButton('Меню', callback_data='m-m'))
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
 def gen_menu(page, fix_pos=10):
@@ -39,7 +47,7 @@ def gen_foods(food, chat_id, temp=0, name='foods'):
     if name == 'foods':
         if dish in sessions[chat_id]['cart']:
             temp = sessions[chat_id]['cart'][dish]
-        keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;{food[0]};-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;{food[0]};+'))
+        keyb_food.add(InlineKeyboardButton('-', callback_data=f'fa;-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data='None'),InlineKeyboardButton('+', callback_data=f'fa;+'))
         keyb_food.add(InlineKeyboardButton('Добавить в корзину', callback_data=f'f;{temp}')) #Добавить в calldatу кол-во товара, из кнопки кол-во
     elif name == 'cart':
         temp = sessions[chat_id]['real_cart'][food]
@@ -59,6 +67,7 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
         keyb_slider = InlineKeyboardMarkup()
         keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'crt-back-{page}'), InlineKeyboardButton('Вперед', callback_data=f'crt-forward-{page}'))
         keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m-c'))
+        keyb_slider.add(InlineKeyboardButton('Оформить заказ', callback_data=f'o-o'))
     return keyb_slider, start, end, page
 
 @bot.message_handler(content_types=['text'])
@@ -70,7 +79,13 @@ def start(message):
         sessions[message.chat.id]['food_list'] = [] #Удалить потом
         sessions[message.chat.id]['real_cart'] = {}
         sessions[message.chat.id]['cart_ids'] = []
+        sessions[message.chat.id]['adress_info'] = {}
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
+    else:
+        bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'], text=sessions[message.chat.id]['adress_info']['adress']+' '+message.text, reply_markup=keyb_finish)
+        if message.from_user.is_bot == False:
+            bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+        
 
 # call back types: can be changed
 #   m - menu
@@ -136,13 +151,13 @@ def query_handler(call):
     # Callback для кнопок + и -. UPD 02:1 18.11
     # Callback buttons + and -, I tend to think that it is shit code
     if call.data.split(';')[0] == 'fa':
-        if call.data.split(';')[2] == '+':
+        if call.data.split(';')[1] == '+':
             if call.message.text in sessions[call.message.chat.id]['cart']:
                 sessions[call.message.chat.id]['cart'][call.message.text] += 1
             else:
                 sessions[call.message.chat.id]['cart'][call.message.text] = 1
             bot.edit_message_text(chat_id=call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message.chat.id, sessions[call.message.chat.id]['cart'][call.message.text]))
-        if call.data.split(';')[2] == '-':
+        if call.data.split(';')[1] == '-':
             if call.message.text in sessions[call.message.chat.id]['cart']:
                 sessions[call.message.chat.id]['cart'][call.message.text] -= 1
                 bot.edit_message_text(chat_id = call.message.chat.id, message_id = call.message.message_id, text=call.message.text, reply_markup=gen_foods(call.message.text, call.message.chat.id, sessions[call.message.chat.id]['cart'][call.message.text]))
@@ -235,11 +250,31 @@ def query_handler(call):
                 if sessions[call.message.chat.id]['real_cart'][call.message.text] == 0:
                     sessions[call.message.chat.id]['real_cart'].pop(call.message.text)
                     # нужно ли сразу удалять позицию из корзины, когда кол-во = 0
-        
-            
+    
+    if call.data.split('-')[0] == 'o':
+        # bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        order_message = ''
+        price = 0
+        for item in sessions[call.message.chat.id]['real_cart']:
+                food_info = item.split(' цена за шт. - ')
+                order_message += food_info[0] + ', ' + str(sessions[call.message.chat.id]['real_cart'][item])+ ' шт. : ' + str(sessions[call.message.chat.id]['real_cart'][item] * float(food_info[1])) + '\n'
+                price += sessions[call.message.chat.id]['real_cart'][item] * float(food_info[1])
+        if call.data.split('-')[1] == 'o':
+            for id in sessions[call.message.chat.id]['cart_ids']:
+                bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            sessions[call.message.chat.id]['cart_ids'] = [] 
+            order_message += f'Цена заказа: {price}' 
+            bot.send_message(call.message.chat.id, order_message, reply_markup=key_order)
 
-# Надо добавить корзину.
-# Need to add cart
+        if call.data.split('-')[1] == 'next':
+            bot.delete_message(call.message.chat.id, call.message.message_id)
+            a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВведите адрес доставки: ', reply_markup=keyb_order_card)
+            sessions[call.message.chat.id]['adress_info']['adress'] = f'{call.message.text}\nВведите адрес доставки:'
+            sessions[call.message.chat.id]['adress_info']['id'] = a.message_id
+
+        if call.data.split('-')[1] == 'finish':
+            bot.send_message(call.message.chat.id, 'Ваш заказ:\n'+ sessions[call.message.chat.id]['adress_info']['adress'], reply_markup=keyb_finish)
 
 print("Ready")
 
