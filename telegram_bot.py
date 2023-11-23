@@ -90,7 +90,7 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
     end = start + fix_pos
     if name == 'foods':
         keyb_slider = InlineKeyboardMarkup()
-        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Корзина', callback_data='-0'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
+        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Корзина', callback_data='cart-0'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
         keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m-m'))
     elif name == 'cart':
         keyb_slider = InlineKeyboardMarkup()
