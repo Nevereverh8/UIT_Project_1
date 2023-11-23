@@ -125,6 +125,7 @@ def start(message):
             bot.delete_message(chat_id= -1002019810166, message_id=message.message_id)
         else:
             if message.from_user.is_bot == False:
+                admin_session[message.from_user.id]['admin_to_change'] = message.text
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
                 bot.edit_message_text(chat_id=message.chat.id, message_id=admin_session[message.from_user.id]['action_id'][0], text=f"{admin_session[message.from_user.id]['last_message']} {message.text}", reply_markup=admin_management(admin_session[message.from_user.id]['action_id'][1]))
 
@@ -328,11 +329,11 @@ def query_handler(call):
         if call.data.split('-')[1] == 'adm':
             a = bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
         if call.data.split('-')[1] == 'ad':
-            a = bot.send_message(call.message.chat.id, 'Введите никнейм пользователя, которого хотите сделать админом и его уровень.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
+            a = bot.send_message(call.message.chat.id, 'Введите никнейм пользователя, которого хотите сделать админом и его уровень.\nПример: "Никнейм" 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
         if call.data.split('-')[1] == 'del':
             a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите удалить.\n Пример: "Никнейм"\n Админ:', reply_markup=admin_management(call.data.split('-')[1]))
         if call.data.split('-')[1] == 'ed':
-            a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите изменить и уровень, который хотите ему присвоить.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
+            a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите изменить и уровень, который хотите ему присвоить.\nПример: "Никнейм" 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
         
         if call.data.split('-')[1] == 'db':
             a = bot.send_message(call.message.chat.id, 'Данная функция находиться в разработке...', reply_markup=keyb_db_change)
@@ -349,7 +350,12 @@ def query_handler(call):
             elif call.data.split('-')[0] == 'del':
                 sql_request = '''delete admin'''
             elif call.data.split('-')[0] == 'edit':
-                sql_request = '''edit admin'''
+                print(admin_session[call.message.chat.id]['admin_to_change'].split(' '))
+                if len(admin_session[call.message.chat.id]['admin_to_change'].split(' ')) == 2:
+                    id = db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name')
+                    db.update_cell('Admins', id[0][0], 'role', admin_session[call.message.chat.id]['admin_to_change'].split()[1])
+                    print(db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name'))
+                # db.update_cell('Admins', )
             admin_session[call.message.chat.id]['last_message'] = call.message.text
             bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
