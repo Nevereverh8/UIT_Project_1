@@ -9,6 +9,7 @@ import sys
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
 
 sessions = {}
+admin_session = {}
 
 keyb_menu = InlineKeyboardMarkup()
 keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-m'))
@@ -37,12 +38,12 @@ keyb_db_change.add(InlineKeyboardButton('Назад', callback_data='adm-back'))
 def admin_management(call_data):
     keyb_yes_back = InlineKeyboardMarkup()
     if call_data == 'ad':
-        callback = 'add-adm'
+        callback = 'add-yes'
     elif call_data == 'del':
-        callback = 'del-adm'
+        callback = 'del-yes'
     elif call_data == 'ed':
-        callback = 'add-ed'
-    keyb_yes_back.add(InlineKeyboardButton('Добавить', callback_data=callback), InlineKeyboardButton('Назад', callback_data='adm-adm'))
+        callback = 'edit-yes'
+    keyb_yes_back.add(InlineKeyboardButton('Назад', callback_data='adm-adm'), InlineKeyboardButton('Добавить', callback_data=callback))
     
     return keyb_yes_back 
 
@@ -97,7 +98,7 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
 
 @bot.message_handler(content_types=['text'])
 def start(message):
-    if message.chat.id != -1002019810166:
+    if message.chat.id != -1002019810166 and 'Цена заказа:' in message.text:
         if message.text == '/start':
             sessions[message.chat.id] = {}
             sessions[message.chat.id]['last_foods'] = {}
@@ -113,12 +114,19 @@ def start(message):
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     else:
         if message.text == '/panel':
+            if message.from_user.id == db.get_item('Admins', message.from_user.id, 'tg_id')[0][3]:
+                admin_session[message.from_user.id] = {}
+                print(admin_session)
+                sys.stdout.flush()
             bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
             bot.delete_message(chat_id= -1002019810166, message_id=message.message_id)
-            
-            # print(message.from_user)
-            # sys.stdout.flush()
-            # отправлять карточки заказов в админский чат 
+        else:
+            if message.from_user.is_bot == False:
+                bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+                bot.edit_message_text(chat_id=message.chat.id, message_id=admin_session[message.from_user.id]['action_id'], text=f"{admin_session[message.from_user.id]['last_message']} {message.text}", reply_markup=admin_management('ad'))
+
+
+        # отправлять карточки заказов в админский чат 
             
         # admin commands
 
@@ -315,19 +323,26 @@ def query_handler(call):
     if call.data.split('-')[0] == 'adm':
         bot.delete_message(call.message.chat.id, call.message.message_id)
         if call.data.split('-')[1] == 'adm':
-            bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
+            a = bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
         if call.data.split('-')[1] == 'ad':
-            bot.send_message(call.message.chat.id, 'Введите никнейм пользователя, которого хотите сделать админом и его уровень.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
+            a = bot.send_message(call.message.chat.id, 'Введите никнейм пользователя, которого хотите сделать админом и его уровень.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
         if call.data.split('-')[1] == 'del':
-            bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите удалить.\n Пример: "Никнейм"\n Админ:', reply_markup=admin_management(call.data.split('-')[1]))
+            a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите удалить.\n Пример: "Никнейм"\n Админ:', reply_markup=admin_management(call.data.split('-')[1]))
         if call.data.split('-')[1] == 'ed':
-            bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите изменить и уровень, который хотите ему присвоить.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
-            
+            a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите изменить и уровень, который хотите ему присвоить.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
+        admin_session[call.message.chat.id]['action_id'] = a.message_id
+        admin_session[call.message.chat.id]['last_message'] = a.text
 
-        if call.data.split('-')[1] == 'db':
-            bot.send_message(call.message.chat.id, 'Данная функция находиться в разработке...', reply_markup=keyb_db_change)
-        if call.data.split('-')[1] == 'back':
-            bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel) 
+    if call.data.split('-')[1] == 'yes':
+        if call.data.split('-')[0] == 'add':
+            if admin_session[call.message.chat.id]['last_message'] != None:
+                admin_session[call.message.chat.id]['last_message'] = call.message.text
+                bot.delete_message(call.message.chat.id, call.message.message_id)
+                bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
+    if call.data.split('-')[1] == 'db':
+        bot.send_message(call.message.chat.id, 'Данная функция находиться в разработке...', reply_markup=keyb_db_change)
+    if call.data.split('-')[1] == 'back':
+        bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel) 
 
 print("Ready")
 
