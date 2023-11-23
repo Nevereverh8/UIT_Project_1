@@ -263,6 +263,27 @@ class DataBase:
             con.execute(f'''DELETE FROM {table}
                             WHERE id = {id}''')
 
+    def stat(self, date, date2=''):
+        day, month, year = date.split('.')
+        if date2:
+            day2, month2, year2 = date2.split('.')
+        if date2:
+            pass
+        else:
+            with self.db as con:
+                count = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                        WHERE time_placed LIKE '{day}.{month}.{year}%'
+                                        """).fetchone()
+                delivered = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                            WHERE time_placed LIKE '{day}.{month}.{year}%' AND
+                                                  is_finished = 1
+                                        """).fetchone()
+                aborted = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                            WHERE time_placed LIKE '{day}.{month}.{year}%' AND
+                                                  is_aborted = 1
+                                        """).fetchone()
+
+
 
 db = DataBase()
 
