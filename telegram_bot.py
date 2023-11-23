@@ -72,7 +72,7 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
 
 @bot.message_handler(content_types=['text'])
 def start(message):
-    if message.text == '/start':
+    if message.text == '/start' and message.chat.id != -4058104992:
         sessions[message.chat.id] = {}
         sessions[message.chat.id]['last_foods'] = {}
         sessions[message.chat.id]['cart'] = {}
@@ -81,7 +81,7 @@ def start(message):
         sessions[message.chat.id]['cart_ids'] = []
         sessions[message.chat.id]['adress_info'] = {}
         bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
-    else:
+    elif message.chat.id != -4058104992:
         bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'], text=sessions[message.chat.id]['adress_info']['adress']+' '+message.text, reply_markup=keyb_finish)
         if message.from_user.is_bot == False:
             bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
@@ -191,7 +191,7 @@ def query_handler(call):
     # Adding dishes in cart
     if call.data.split(';')[0] == 'f':
         if call.data.split(';')[1] != '0':
-            sessions[call.message.chat.id]['real_cart'][call.message.text] = int(call.data.split(';')[1])
+            sessions[call.message.chat.id]['real_cart'][call.message.text.split(' цена за шт. - ')[0]] = int(call.data.split(';')[1])
         print(sessions[call.message.chat.id]['real_cart'])
         sys.stdout.flush() 
     
@@ -254,10 +254,11 @@ def query_handler(call):
     if call.data.split('-')[0] == 'o':
         order_message = ''
         price = 0
+        print(db.get_item('Food', 'Кока-кола 0.5л в стекле', 'name'))
+
         for item in sessions[call.message.chat.id]['real_cart']:
-                food_info = item.split(' цена за шт. - ')
-                order_message += food_info[0] + ', ' + str(sessions[call.message.chat.id]['real_cart'][item])+ ' шт. : ' + str(sessions[call.message.chat.id]['real_cart'][item] * float(food_info[1])) + '\n'
-                price += sessions[call.message.chat.id]['real_cart'][item] * float(food_info[1])
+                order_message += item + ', ' + str(sessions[call.message.chat.id]['real_cart'][item])+ ' шт. : ' + str(sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2])+' руб' + '\n'
+                price += sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2]
         if call.data.split('-')[1] == 'o':
             for id in sessions[call.message.chat.id]['cart_ids']:
                 bot.delete_message(chat_id=call.message.chat.id, message_id=id)
