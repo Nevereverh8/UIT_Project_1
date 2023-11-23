@@ -221,6 +221,28 @@ class DataBase:
                 client_id = con.execute('''SELECT max(id) FROM Clients''').fetchone()[0]
             return client_id
 
+    def insert_admin(self, name: str, role: int, tg_id: int):
+        """
+        Inserts admin to database
+
+        :param role: 1 or 2
+        """
+        with self.db as con:
+            a = con.execute(f'''
+                                   SELECT * from Admins
+                                   WHERE tg_id = {tg_id}
+                    ''').fetchone()
+            if a:
+                tg_id = a[0][2]
+            else:
+                con.execute(f'''INSERT INTO Clients (name, tel, age, adress, chat_type, chat_id)
+                                  VALUES ('{name}', {role}, {tg_id}''')
+
+    def del_admin(self, tg_id):
+        with self.db as con:
+            con.execute(f'''DELETE FROM Admins
+                            WHERE tg_id = {tg_id}''')
+
     def stop_food(self, food_name):
         with self.db as con:
             con.execute(f'''UPDATE Food
