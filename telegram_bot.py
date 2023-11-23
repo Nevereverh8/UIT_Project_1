@@ -21,6 +21,31 @@ keyb_order_card.add(InlineKeyboardButton('Изменить заказ', callback
 
 keyb_finish = InlineKeyboardMarkup()
 keyb_finish.add(InlineKeyboardButton('Изменить заказ', callback_data='cart'), InlineKeyboardButton('Изменить адрес доставки', callback_data='o-o'),  InlineKeyboardButton('Меню', callback_data='m-m'))
+
+keyb_panel = InlineKeyboardMarkup()
+keyb_panel.add(InlineKeyboardButton('Изменение базы', callback_data='adm-db'), InlineKeyboardButton('Изменение администраторов', callback_data='adm-adm'))
+
+keyb_admin_management = InlineKeyboardMarkup()
+keyb_admin_management.add(InlineKeyboardButton('Добавить админа', callback_data='adm-ad'))
+keyb_admin_management.add(InlineKeyboardButton('Изменить уровень админа', callback_data='adm-ed'))
+keyb_admin_management.add(InlineKeyboardButton('Удалить админа', callback_data='adm-del'))
+keyb_admin_management.add(InlineKeyboardButton('Назад', callback_data='adm-back'))
+
+keyb_db_change = InlineKeyboardMarkup()
+keyb_db_change.add(InlineKeyboardButton('Назад', callback_data='adm-back'))
+
+def admin_management(call_data):
+    keyb_yes_back = InlineKeyboardMarkup()
+    if call_data == 'ad':
+        callback = 'add-adm'
+    elif call_data == 'del':
+        callback = 'del-adm'
+    elif call_data == 'ed':
+        callback = 'add-ed'
+    keyb_yes_back.add(InlineKeyboardButton('Добавить', callback_data=callback), InlineKeyboardButton('Назад', callback_data='adm-adm'))
+    
+    return keyb_yes_back 
+
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
 def gen_menu(page, fix_pos=10):
@@ -72,20 +97,31 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
 
 @bot.message_handler(content_types=['text'])
 def start(message):
-    if message.text == '/start' and message.chat.id != -4058104992:
-        sessions[message.chat.id] = {}
-        sessions[message.chat.id]['last_foods'] = {}
-        sessions[message.chat.id]['cart'] = {}
-        sessions[message.chat.id]['food_list'] = [] #Удалить потом
-        sessions[message.chat.id]['real_cart'] = {}
-        sessions[message.chat.id]['cart_ids'] = []
-        sessions[message.chat.id]['adress_info'] = {}
-        bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
-    elif message.chat.id != -4058104992:
-        bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'], text=sessions[message.chat.id]['adress_info']['adress']+' '+message.text, reply_markup=keyb_finish)
-        if message.from_user.is_bot == False:
-            bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-        
+    if message.chat.id != -1002019810166:
+        if message.text == '/start':
+            sessions[message.chat.id] = {}
+            sessions[message.chat.id]['last_foods'] = {}
+            sessions[message.chat.id]['cart'] = {}
+            sessions[message.chat.id]['food_list'] = [] #Удалить потом
+            sessions[message.chat.id]['real_cart'] = {}
+            sessions[message.chat.id]['cart_ids'] = []
+            sessions[message.chat.id]['adress_info'] = {}
+            bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
+        else:
+            bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'], text=sessions[message.chat.id]['adress_info']['adress']+' '+message.text, reply_markup=keyb_finish)
+            if message.from_user.is_bot == False:
+                bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    else:
+        if message.text == '/panel':
+            bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
+            bot.delete_message(chat_id= -1002019810166, message_id=message.message_id)
+            
+            # print(message.from_user)
+            # sys.stdout.flush()
+            # отправлять карточки заказов в админский чат 
+            
+        # admin commands
+
 
 # call back types: can be changed
 #   m - menu
@@ -275,6 +311,23 @@ def query_handler(call):
 
         if call.data.split('-')[1] == 'finish':
             bot.send_message(call.message.chat.id, 'Ваш заказ:\n'+ sessions[call.message.chat.id]['adress_info']['adress'], reply_markup=keyb_finish)
+
+    if call.data.split('-')[0] == 'adm':
+        bot.delete_message(call.message.chat.id, call.message.message_id)
+        if call.data.split('-')[1] == 'adm':
+            bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
+        if call.data.split('-')[1] == 'ad':
+            bot.send_message(call.message.chat.id, 'Введите никнейм пользователя, которого хотите сделать админом и его уровень.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
+        if call.data.split('-')[1] == 'del':
+            bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите удалить.\n Пример: "Никнейм"\n Админ:', reply_markup=admin_management(call.data.split('-')[1]))
+        if call.data.split('-')[1] == 'ed':
+            bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите изменить и уровень, который хотите ему присвоить.\nПример: "Никнейм" - 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
+            
+
+        if call.data.split('-')[1] == 'db':
+            bot.send_message(call.message.chat.id, 'Данная функция находиться в разработке...', reply_markup=keyb_db_change)
+        if call.data.split('-')[1] == 'back':
+            bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel) 
 
 print("Ready")
 
