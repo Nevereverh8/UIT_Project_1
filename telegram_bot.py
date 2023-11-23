@@ -356,7 +356,7 @@ def query_handler(call):
                 elif call.data.split('-')[0] == 'edit':
                     db.update_cell('Admins', id[0][0], 'role', admin_session[call.message.chat.id]['admin_to_change'].split()[1])
                     print(db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name'))
-        
+         
             admin_session[call.message.chat.id]['last_message'] = call.message.text
             bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
