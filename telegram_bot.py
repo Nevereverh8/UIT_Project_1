@@ -72,20 +72,30 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
 
 @bot.message_handler(content_types=['text'])
 def start(message):
-    if message.text == '/start' and message.chat.id != -4058104992:
-        sessions[message.chat.id] = {}
-        sessions[message.chat.id]['last_foods'] = {}
-        sessions[message.chat.id]['cart'] = {}
-        sessions[message.chat.id]['food_list'] = [] #Удалить потом
-        sessions[message.chat.id]['real_cart'] = {}
-        sessions[message.chat.id]['cart_ids'] = []
-        sessions[message.chat.id]['adress_info'] = {}
-        bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
-    elif message.chat.id != -4058104992:
-        bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'], text=sessions[message.chat.id]['adress_info']['adress']+' '+message.text, reply_markup=keyb_finish)
-        if message.from_user.is_bot == False:
-            bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
-        
+    print(message.chat.id, message.from_user.id)
+    sys.stdout.flush()
+    if message.chat.id != -1002019810166:
+        if message.text == '/start':
+            sessions[message.chat.id] = {}
+            sessions[message.chat.id]['last_foods'] = {}
+            sessions[message.chat.id]['cart'] = {}
+            sessions[message.chat.id]['food_list'] = [] #Удалить потом
+            sessions[message.chat.id]['real_cart'] = {}
+            sessions[message.chat.id]['cart_ids'] = []
+            sessions[message.chat.id]['adress_info'] = {}
+            bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
+        else:
+            bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'], text=sessions[message.chat.id]['adress_info']['adress']+' '+message.text, reply_markup=keyb_finish)
+            if message.from_user.is_bot == False:
+                bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+    else:
+        if message.text == '/panel':
+            bot.send_message(chat_id=-1002019810166, text = 'dsada') 
+            # забрать айдишник админа, удалить сообщение, прислать панель в лс админу, если уровень 2. Если в базе вообще кто-то есть
+            # отправлять карточки заказов в админский чат 
+            
+        # admin commands
+
 
 # call back types: can be changed
 #   m - menu
