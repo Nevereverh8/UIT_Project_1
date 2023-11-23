@@ -75,6 +75,7 @@ if __name__ == '__main__':
                         ''')
         sql_insert = '''INSERT INTO Admins (name, role, tg_id) VALUES (?,?,?)'''
         con.execute(sql_insert, ["Юра", 2, 413844851])
+        con.execute(sql_insert, ["Костя", 2, 821927308])
 
         # Clients
         con.execute('''
@@ -273,16 +274,16 @@ class DataBase:
             with self.db as con:
                 count = con.execute(f"""SELECT COUNT(id) FROM Orders
                                         WHERE time_placed LIKE '{day}.{month}.{year}%'
-                                        """).fetchone()
+                                        """).fetchone()[0]
                 delivered = con.execute(f"""SELECT COUNT(id) FROM Orders
                                             WHERE time_placed LIKE '{day}.{month}.{year}%' AND
                                                   is_finished = 1
-                                        """).fetchone()
+                                        """).fetchone()[0]
                 aborted = con.execute(f"""SELECT COUNT(id) FROM Orders
                                             WHERE time_placed LIKE '{day}.{month}.{year}%' AND
                                                   is_aborted = 1
-                                        """).fetchone()
-
+                                        """).fetchone()[0]
+        return f"Ordered at this day:{count}\nDelivered at this day:{delivered}\nAborted orders at this day:{aborted}"
 
 
 db = DataBase()
