@@ -1,6 +1,6 @@
 import json
 import sqlite3 as sl
-
+import datetime as dt
 with open('config.json') as file:
     db_path = json.load(file)['db_path']
     print('database connected to '+ db_path)
@@ -75,6 +75,7 @@ if __name__ == '__main__':
                         ''')
         sql_insert = '''INSERT INTO Admins (name, role, tg_id) VALUES (?,?,?)'''
         con.execute(sql_insert, ["Юра", 2, 413844851])
+        con.execute(sql_insert, ["Костя", 2, 821927308])
 
         # Clients
         con.execute('''
@@ -220,6 +221,28 @@ class DataBase:
                 client_id = con.execute('''SELECT max(id) FROM Clients''').fetchone()[0]
             return client_id
 
+    def insert_admin(self, name: str, role: int, tg_id: int):
+        """
+        Inserts admin to database
+
+        :param role: 1 or 2
+        """
+        with self.db as con:
+            a = con.execute(f'''
+                                   SELECT * from Admins
+                                   WHERE tg_id = {tg_id}
+                    ''').fetchone()
+            if a:
+                tg_id = a[0][2]
+            else:
+                con.execute(f'''INSERT INTO Clients (name, tel, age, adress, chat_type, chat_id)
+                                  VALUES ('{name}', {role}, {tg_id}''')
+
+    def del_admin(self, tg_id):
+        with self.db as con:
+            con.execute(f'''DELETE FROM Admins
+                            WHERE tg_id = {tg_id}''')
+
     def stop_food(self, food_name):
         with self.db as con:
             con.execute(f'''UPDATE Food
@@ -262,6 +285,45 @@ class DataBase:
         with self.db as con:
             con.execute(f'''DELETE FROM {table}
                             WHERE id = {id}''')
+
+    def day_stat(self, date):
+        day, month, year = date.split('.')
+        with self.db as con:
+            count = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                    WHERE time_placed LIKE '{day}.{month}.{year}%'
+                                    """).fetchone()[0]
+            delivered = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                        WHERE time_placed LIKE '{day}.{month}.{year}%' AND
+                                              is_finished = 1
+                                    """).fetchone()[0]
+            aborted = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                        WHERE time_placed LIKE '{day}.{month}.{year}%' AND
+                                              is_aborted = 1
+                                    """).fetchone()[0]
+        return f"Ordered at this day:{count}\nDelivered at this day:{delivered}\nAborted orders at this day:{aborted}"
+
+    def week_stat(self, date):
+        day, month, year = date.split('.')
+        week = dt.date(int(year), int(month), int(day)).isocalendar().week
+        week = [dt.date.fromisocalendar(int(year), week, i) for i in range(1, 8)]
+        dates = [f'{i.day}.{i.month}.{i.year}' for i in week]
+        cond_list = ''
+        for i in dates:
+            cond_list += f"time_placed LIKE '{i.split('.')[0]}.{i.split('.')[1]}.{i.split('.')[2]}%' AND "
+        cond_list = cond_list[:-5]
+        with self.db as con:
+                count = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                                   WHERE time_placed LIKE {cond_list}
+                                                   """).fetchone()[0]
+                delivered = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                                       WHERE time_placed LIKE {cond_list} AND
+                                                             is_finished = 1
+                                                   """).fetchone()[0]
+                aborted = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                                       WHERE time_placed LIKE {cond_list} AND
+                                                             is_aborted = 1
+                                                   """).fetchone()[0]
+        return f"Ordered at this week:{count}\nDelivered at this week:{delivered}\nAborted orders at this week:{aborted}"
 
 
 db = DataBase()
