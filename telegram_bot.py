@@ -15,13 +15,13 @@ keyb_menu = InlineKeyboardMarkup()
 keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-m'))
 
 key_order = InlineKeyboardMarkup()
-key_order.add(InlineKeyboardButton('Изменить заказ', callback_data='cart'), InlineKeyboardButton('Продолжить', callback_data='o-next'))
+key_order.add(InlineKeyboardButton('Изменить заказ', callback_data='cart-0'), InlineKeyboardButton('Продолжить', callback_data='o-next'))
 
 keyb_order_card = InlineKeyboardMarkup()
-keyb_order_card.add(InlineKeyboardButton('Изменить заказ', callback_data='cart'), InlineKeyboardButton('Завершить оформление заказа', callback_data='о-finish'))
+keyb_order_card.add(InlineKeyboardButton('Изменить заказ', callback_data='cart-0'), InlineKeyboardButton('Завершить оформление заказа', callback_data='о-finish'))
 
 keyb_finish = InlineKeyboardMarkup()
-keyb_finish.add(InlineKeyboardButton('Изменить заказ', callback_data='cart'), InlineKeyboardButton('Изменить адрес доставки', callback_data='o-o'),  InlineKeyboardButton('Меню', callback_data='m-m'))
+keyb_finish.add(InlineKeyboardButton('Изменить заказ', callback_data='cart-0'), InlineKeyboardButton('Изменить адрес доставки', callback_data='o-o'),  InlineKeyboardButton('Меню', callback_data='m-m'))
 
 keyb_panel = InlineKeyboardMarkup()
 keyb_panel.add(InlineKeyboardButton('Изменение базы', callback_data='adm-db'), InlineKeyboardButton('Изменение администраторов', callback_data='adm-adm'))
@@ -90,7 +90,7 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
     end = start + fix_pos
     if name == 'foods':
         keyb_slider = InlineKeyboardMarkup()
-        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Корзина', callback_data='cart'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
+        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn-back-{page}'), InlineKeyboardButton('Корзина', callback_data='cart-0'), InlineKeyboardButton('Вперед', callback_data=f'fn-forward-{page}'))
         keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m-m'))
     elif name == 'cart':
         keyb_slider = InlineKeyboardMarkup()
@@ -101,7 +101,7 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
 
 @bot.message_handler(content_types=['text'])
 def start(message):
-    if message.chat.id != -1002019810166 and 'Цена заказа:' in message.text:
+    if message.chat.id != -1002019810166 and message.chat.id not in admin_session:
         if message.text == '/start':
             sessions[message.chat.id] = {}
             sessions[message.chat.id]['last_foods'] = {}
@@ -119,7 +119,8 @@ def start(message):
         if message.text == '/panel':
             if message.from_user.id == db.get_item('Admins', message.from_user.id, 'tg_id')[0][3]:
                 admin_session[message.from_user.id] = {}
-                print(admin_session)
+                # admin_session[message.from_user.id] = message.chat
+                print(message.chat)
                 sys.stdout.flush()
             bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
             bot.delete_message(chat_id= -1002019810166, message_id=message.message_id)
@@ -243,7 +244,7 @@ def query_handler(call):
         print(sessions[call.message.chat.id]['real_cart'])
         sys.stdout.flush() 
     
-    if call.data == 'cart':
+    if call.data.split('-')[0] == 'cart':
        
         for id in sessions[call.message.chat.id]['last_foods']:
             bot.delete_message(chat_id=call.message.chat.id, message_id=id)
@@ -329,6 +330,7 @@ def query_handler(call):
         if call.data.split('-')[1] == 'adm':
             a = bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
         if call.data.split('-')[1] == 'ad':
+            # bot.send_message(call.message.chat.id, )
             a = bot.send_message(call.message.chat.id, 'Введите никнейм пользователя, которого хотите сделать админом и его уровень.\nПример: "Никнейм" 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
         if call.data.split('-')[1] == 'del':
             a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите удалить.\n Пример: "Никнейм"\n Админ:', reply_markup=admin_management(call.data.split('-')[1]))
@@ -345,17 +347,16 @@ def query_handler(call):
 
     if call.data.split('-')[1] == 'yes':
         if admin_session[call.message.chat.id]['last_message'] != call.message.text:
-            if call.data.split('-')[0] == 'add':
-                sql_request = '''add admin'''
-            elif call.data.split('-')[0] == 'del':
-                sql_request = '''delete admin'''
-            elif call.data.split('-')[0] == 'edit':
-                print(admin_session[call.message.chat.id]['admin_to_change'].split(' '))
-                if len(admin_session[call.message.chat.id]['admin_to_change'].split(' ')) == 2:
-                    id = db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name')
+            if len(admin_session[call.message.chat.id]['admin_to_change'].split(' ')) == 2:
+                id = db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name')
+                if call.data.split('-')[0] == 'add':
+                    sql_request = '''add admin'''
+                elif call.data.split('-')[0] == 'del':
+                    db.del_item('Admins', id[0][0])
+                elif call.data.split('-')[0] == 'edit':
                     db.update_cell('Admins', id[0][0], 'role', admin_session[call.message.chat.id]['admin_to_change'].split()[1])
                     print(db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name'))
-                # db.update_cell('Admins', )
+        
             admin_session[call.message.chat.id]['last_message'] = call.message.text
             bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
