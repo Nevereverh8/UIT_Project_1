@@ -120,7 +120,7 @@ def start(message):
             if message.from_user.id == db.get_item('Admins', message.from_user.id, 'tg_id')[0][3]:
                 admin_session[message.from_user.id] = {}
                 # admin_session[message.from_user.id] = message.chat
-                print(message.chat)
+                print(message)
                 sys.stdout.flush()
             bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
             bot.delete_message(chat_id= -1002019810166, message_id=message.message_id)
@@ -330,7 +330,6 @@ def query_handler(call):
         if call.data.split('-')[1] == 'adm':
             a = bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
         if call.data.split('-')[1] == 'ad':
-            # bot.send_message(call.message.chat.id, )
             a = bot.send_message(call.message.chat.id, 'Введите никнейм пользователя, которого хотите сделать админом и его уровень.\nПример: "Никнейм" 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split('-')[1]))
         if call.data.split('-')[1] == 'del':
             a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите удалить.\n Пример: "Никнейм"\n Админ:', reply_markup=admin_management(call.data.split('-')[1]))
@@ -350,7 +349,8 @@ def query_handler(call):
             if len(admin_session[call.message.chat.id]['admin_to_change'].split(' ')) == 2:
                 id = db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name')
                 if call.data.split('-')[0] == 'add':
-                    sql_request = '''add admin'''
+                    # db.insert_admin()
+                    pass
                 elif call.data.split('-')[0] == 'del':
                     db.del_item('Admins', id[0][0])
                 elif call.data.split('-')[0] == 'edit':
