@@ -1,6 +1,6 @@
 import json
 import sqlite3 as sl
-
+import datetime as dt
 with open('config.json') as file:
     db_path = json.load(file)['db_path']
     print('database connected to '+ db_path)
@@ -264,26 +264,44 @@ class DataBase:
             con.execute(f'''DELETE FROM {table}
                             WHERE id = {id}''')
 
-    def stat(self, date, date2=''):
+    def day_stat(self, date):
         day, month, year = date.split('.')
-        if date2:
-            day2, month2, year2 = date2.split('.')
-        if date2:
-            pass
-        else:
-            with self.db as con:
-                count = con.execute(f"""SELECT COUNT(id) FROM Orders
-                                        WHERE time_placed LIKE '{day}.{month}.{year}%'
-                                        """).fetchone()[0]
-                delivered = con.execute(f"""SELECT COUNT(id) FROM Orders
-                                            WHERE time_placed LIKE '{day}.{month}.{year}%' AND
-                                                  is_finished = 1
-                                        """).fetchone()[0]
-                aborted = con.execute(f"""SELECT COUNT(id) FROM Orders
-                                            WHERE time_placed LIKE '{day}.{month}.{year}%' AND
-                                                  is_aborted = 1
-                                        """).fetchone()[0]
+        with self.db as con:
+            count = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                    WHERE time_placed LIKE '{day}.{month}.{year}%'
+                                    """).fetchone()[0]
+            delivered = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                        WHERE time_placed LIKE '{day}.{month}.{year}%' AND
+                                              is_finished = 1
+                                    """).fetchone()[0]
+            aborted = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                        WHERE time_placed LIKE '{day}.{month}.{year}%' AND
+                                              is_aborted = 1
+                                    """).fetchone()[0]
         return f"Ordered at this day:{count}\nDelivered at this day:{delivered}\nAborted orders at this day:{aborted}"
+
+    def week_stat(self, date):
+        day, month, year = date.split('.')
+        week = dt.date(int(year), int(month), int(day)).isocalendar().week
+        week = [dt.date.fromisocalendar(int(year), week, i) for i in range(1, 8)]
+        dates = [f'{i.day}.{i.month}.{i.year}' for i in week]
+        cond_list = ''
+        for i in dates:
+            cond_list += f"time_placed LIKE '{i.split('.')[0]}.{i.split('.')[1]}.{i.split('.')[2]}%' AND "
+        cond_list = cond_list[:-5]
+        with self.db as con:
+                count = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                                   WHERE time_placed LIKE {cond_list}
+                                                   """).fetchone()[0]
+                delivered = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                                       WHERE time_placed LIKE {cond_list} AND
+                                                             is_finished = 1
+                                                   """).fetchone()[0]
+                aborted = con.execute(f"""SELECT COUNT(id) FROM Orders
+                                                       WHERE time_placed LIKE {cond_list} AND
+                                                             is_aborted = 1
+                                                   """).fetchone()[0]
+        return f"Ordered at this week:{count}\nDelivered at this week:{delivered}\nAborted orders at this week:{aborted}"
 
 
 db = DataBase()
