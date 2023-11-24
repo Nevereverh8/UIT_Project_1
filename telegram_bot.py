@@ -38,6 +38,7 @@ keyb_admin_management.add(InlineKeyboardButton('Удалить админа', ca
 keyb_admin_management.add(InlineKeyboardButton('Назад', callback_data='adm;back'))
 
 keyb_db_change = InlineKeyboardMarkup()
+keyb_db_change.add(InlineKeyboardButton('Поствить товар на стоп', callback_data='db;change'))
 keyb_db_change.add(InlineKeyboardButton('Назад', callback_data='adm;back'))
 
 def admin_management(call_data):
@@ -57,7 +58,7 @@ def admin_management(call_data):
 
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
-def gen_menu(page, fix_pos=10):
+def gen_menu(page, fix_pos=10, callback = ('c', 'cn')):
     categories, keyb_categories = db.get_categories(), InlineKeyboardMarkup()
     # Расчет старта и конца для страницы
     # Calculation of the beginning and end of the page
@@ -66,11 +67,11 @@ def gen_menu(page, fix_pos=10):
     start = fix_pos*(page-1)
     end = start + fix_pos
     for c in categories[start:end]:
-        keyb_categories.add(InlineKeyboardButton(c, callback_data=f'c;{c}'))
+        keyb_categories.add(InlineKeyboardButton(c, callback_data=f'{callback[0]};{c}'))
     if end > fix_pos:
-        keyb_categories.add(InlineKeyboardButton('Назад', callback_data=f'cn;back;{page}'))
+        keyb_categories.add(InlineKeyboardButton('Назад', callback_data=f'{callback[1]};back;{page}'))
     if fix_pos <= end < len(categories):
-        keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'cn;forward;{page}')) 
+        keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'{callback[1]};forward;{page}')) 
     return keyb_categories, page
 
 # Генерирует позиции в котегории ps без слайдера
@@ -86,6 +87,9 @@ def gen_foods(food, chat_id, temp=0, name='foods'):
     elif name == 'cart':
         temp = sessions[chat_id]['real_cart'][food]
         keyb_food.add(InlineKeyboardButton('-', callback_data=f'crta;-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data=temp),InlineKeyboardButton('+', callback_data=f'crta;+'))
+    elif name == 'db_change':
+        print(db.get_item('Food', food[0], 'name'))
+        keyb_food.add(InlineKeyboardButton('Убрать товар из меню', callback_data='db;stop'))
     return keyb_food
     
 # Отдельный слайдер для блюд в категории
@@ -152,6 +156,7 @@ def start(message):
         if message.text == '/panel':
             if message.from_user.id == db.get_item('Admins', message.from_user.id, 'tg_id')[0][3]:
                 admin_session[message.from_user.id] = {}
+                
                 # admin_session[message.from_user.id] = message.chat
                 print(message)
                 sys.stdout.flush()
@@ -162,12 +167,6 @@ def start(message):
                 admin_session[message.from_user.id]['admin_to_change'] = message.text
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
                 bot.edit_message_text(chat_id=message.chat.id, message_id=admin_session[message.from_user.id]['action_id'][0], text=f"{admin_session[message.from_user.id]['last_message']} {message.text}", reply_markup=admin_management(admin_session[message.from_user.id]['action_id'][1]))
-
-
-        # отправлять карточки заказов в админский чат 
-            
-        # admin commands
-
 
 # call back types: can be changed
 #   m - menu
@@ -372,7 +371,7 @@ def query_handler(call):
             a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите изменить и уровень, который хотите ему присвоить.\nПример: "Никнейм" 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split(';')[1]))
         
         if call.data.split(';')[1] == 'db':
-            a = bot.send_message(call.message.chat.id, 'Данная функция находиться в разработке...', reply_markup=keyb_db_change)
+            a = bot.send_message(call.message.chat.id, 'Что хотите изменить?', reply_markup=keyb_db_change)
         if call.data.split(';')[1] == 'back':
             a = bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel)
         # Подтверждение заказа
@@ -388,12 +387,12 @@ def query_handler(call):
                                             time_placed,
                                             db.get_item('Admins', call.from_user.id, 'tg_id')[0][0],
                                             pending_orders[call.data.split(';')[2]]['cart'])
-            bot.edit_message_text(chat_id=int(call.data.split('-')[2][2:]),
+            bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
                                   message_id=pending_orders[call.data.split(';')[2]]['message_id'],
                                   text='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут'
                                   )
         if a and call.data.split(';')[1] !='apr':
-            admin_session[call.message.chat.id]['action_id'] = [a.message_id, call.data.split('-')[1]]
+            admin_session[call.message.chat.id]['action_id'] = [a.message_id, call.data.split(';')[1]]
             admin_session[call.message.chat.id]['last_message'] = a.text
 
     if call.data.split(';')[1] == 'yes':
@@ -429,6 +428,18 @@ def query_handler(call):
         send_order('TG', call.message.chat.id, adress, 375291234567, # change to tel later
                    call.message.message_id, sessions[call.message.chat.id]['real_cart'])
 
+    if call.data.split(';')[0] == 'db':
+        if call.data.split(';')[1] == 'change':
+            bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1, callback=('db', 'dbn'))[0])           
+    if call.data.split(';')[0] == 'dbn': 
+        if call.data.split(';')[1] == 'forward':
+            gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1, callback=('db', 'dbn'))[0])
+        if call.data.split(';')[1] == 'back':
+            gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1, callback=('db', 'dbn'))[0])
+
+    
 print("Ready")
 
 bot.infinity_polling()    
