@@ -82,7 +82,7 @@ def gen_foods(food, chat_id, temp=0, name='foods'):
         temp = sessions[chat_id]['real_cart'][food]
         keyb_food.add(InlineKeyboardButton('-', callback_data=f'crta;-'), InlineKeyboardButton(f'Кол-во: {temp}', callback_data=temp),InlineKeyboardButton('+', callback_data=f'crta;+'))
     return keyb_food
-   
+    
 # Отдельный слайдер для блюд в категории
 # Unique slider for dishes in categories
 def gen_slider(page, fix_pos=2, name = 'foods'):
