@@ -134,7 +134,8 @@ def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:int, me
 
     i_kb = InlineKeyboardMarkup()
     i_kb.add(InlineKeyboardButton('Подтвердить', callback_data=f'adm;apr;{client_chat_type}{str(client_chat_id)}'),
-             InlineKeyboardButton('Отказать', callback_data=f'adm;dec;{client_chat_type}{str(client_chat_id)}'))
+             InlineKeyboardButton('X Вне зоны охвата', callback_data=f'adm;deca;{client_chat_type}{str(client_chat_id)}'),
+             InlineKeyboardButton('X Неправильные данные', callback_data=f'adm;deco;{client_chat_type}{str(client_chat_id)}'))
     a = bot.send_message(admin_chat_id, text, reply_markup=i_kb)
     pending_orders[client_chat_type+str(client_chat_id)]['admin_message_id'] = a.message_id
 
@@ -382,7 +383,16 @@ def query_handler(call):
             a = bot.send_message(call.message.chat.id, 'Что хотите изменить?', reply_markup=keyb_db_change)
         if call.data.split(';')[1] == 'back':
             a = bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel)
-        # Подтверждение заказа
+        # Подтверждение заказа TG
+        if call.data.split(';')[1] == 'done':
+            i_kb = InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('Отзыв', callback_data='o;review'))
+            i_kb.add(InlineKeyboardButton('В меню', callback_data='m;0'))
+            bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
+                                  message_id=pending_orders[call.data.split(';')[2]]['message_id'],
+                                  text='Спасибо что выбрали нас! Будем благодарны если вы оставите отзыв',
+                                  reply_markup=i_kb)
+            pending_orders.pop(call.data.split(';')[2])
         if call.data.split(';')[1] == 'apr':
             client_id = db.insert_client('name',  # later change to user first_name?
                                          pending_orders[call.data.split(';')[2]]['tel'],
@@ -395,11 +405,38 @@ def query_handler(call):
                                             time_placed,
                                             db.get_item('Admins', call.from_user.id, 'tg_id')[0][0],
                                             pending_orders[call.data.split(';')[2]]['cart'])
+            i_kb=InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('С моим заказом что-то не так',callback_data='o;wrong') )
             bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
                                   message_id=pending_orders[call.data.split(';')[2]]['message_id'],
-                                  text='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут'
+                                  text='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут',
+                                  reply_markup=i_kb)
+            i_kb = InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('Заказ выполнен', callback_data='adm;done;'+call.data.split(';')[2]))
+            bot.edit_message_text(chat_id=call.message.chat.id,
+                                  message_id=call.message.message_id,
+                                  text=call.message.text,
+                                  reply_markup=i_kb)
+
+        # Отклонение заказа TG
+        if call.data.split(';')[1] == 'deca':
+            i_kb = InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('Вернуться в меню', callback_data='m;0'))
+            bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
+                                  message_id=pending_orders[call.data.split(';')[2]]['message_id'],
+                                  text='''Простите, но ваш адресс не входит в зону охвата доставки нашего 
+ресторана, но вы можете посетить наш ресторан самостоятельно по адресу ул. Юайтишевская 42''',
+                                  reply_markup=i_kb
                                   )
-        if a and call.data.split(';')[1] !='apr':
+        if call.data.split(';')[1] == 'deco':
+            i_kb = InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('Вернуться в корзину', callback_data='cart;0'))
+            bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
+                                  message_id=pending_orders[call.data.split(';')[2]]['message_id'],
+                                  text='Вы некорректно заполнили ваши данные, пожалуйста, заполните данные для оформления заказа ещё раз',
+                                  reply_markup=i_kb
+                                  )
+        if a and call.data.split(';')[1] != 'apr':
             admin_session[call.message.chat.id]['action_id'] = [a.message_id, call.data.split(';')[1]]
             admin_session[call.message.chat.id]['last_message'] = a.text
 
