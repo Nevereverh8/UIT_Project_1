@@ -1,3 +1,5 @@
+import time
+
 import telebot
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -7,9 +9,11 @@ import sys
 # sys.stdout.flush() После принта
 
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
+admin_chat_id = -1002019810166
 
 sessions = {}
 admin_session = {}
+pending_orders = {}
 
 keyb_menu = InlineKeyboardMarkup()
 keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m-m'))
@@ -18,10 +22,11 @@ key_order = InlineKeyboardMarkup()
 key_order.add(InlineKeyboardButton('Изменить заказ', callback_data='cart-0'), InlineKeyboardButton('Продолжить', callback_data='o-next'))
 
 keyb_order_card = InlineKeyboardMarkup()
-keyb_order_card.add(InlineKeyboardButton('Изменить заказ', callback_data='cart-0'), InlineKeyboardButton('Завершить оформление заказа', callback_data='о-finish'))
+keyb_order_card.add(InlineKeyboardButton('Изменить заказ', callback_data='cart-0'))
 
 keyb_finish = InlineKeyboardMarkup()
 keyb_finish.add(InlineKeyboardButton('Изменить заказ', callback_data='cart-0'), InlineKeyboardButton('Изменить адрес доставки', callback_data='o-o'),  InlineKeyboardButton('Меню', callback_data='m-m'))
+keyb_finish.add(InlineKeyboardButton('Оформить заказ', callback_data='o-send'))
 
 keyb_panel = InlineKeyboardMarkup()
 keyb_panel.add(InlineKeyboardButton('Изменение базы', callback_data='adm-db'), InlineKeyboardButton('Изменение администраторов', callback_data='adm-adm'))
@@ -99,9 +104,32 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
         keyb_slider.add(InlineKeyboardButton('Оформить заказ', callback_data=f'o-o'))
     return keyb_slider, start, end, page
 
+# Отправка заказа админам
+def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:int, message_id, cart:dict):
+    text, food_list = '', ''
+    pending_orders[client_chat_type+str(client_chat_id)] = {}
+    pending_orders[client_chat_type+str(client_chat_id)]['cart'] = cart
+    pending_orders[client_chat_type+str(client_chat_id)]['adress'] = adress
+    pending_orders[client_chat_type+str(client_chat_id)]['tel'] = tel
+    pending_orders[client_chat_type+str(client_chat_id)]['message_id'] = message_id
+    total_sum = 0
+    for food, amount in cart.items():
+        price = db.get_item('Food', food, 'name')[0][2]
+        food_list += f"{food} * {amount} шт. = {price}\n"
+        total_sum += price * amount
+    text = f'Заказ из {client_chat_type} клиента {client_chat_id}\n\n'
+    text += food_list+'Сумма заказа: '+str(total_sum) + ' руб.'
+
+    i_kb = InlineKeyboardMarkup()
+    i_kb.add(InlineKeyboardButton('Подтвердить', callback_data=f'adm-apr-{client_chat_type}{str(client_chat_id)}'),
+             InlineKeyboardButton('Отказать', callback_data=f'adm-dec-{client_chat_type}{str(client_chat_id)}'))
+    a = bot.send_message(admin_chat_id, text, reply_markup=i_kb)
+    pending_orders[client_chat_type+str(client_chat_id)]['admin_message_id'] = a.message_id
+
+
 @bot.message_handler(content_types=['text'])
 def start(message):
-    if message.chat.id != -1002019810166 and message.chat.id not in admin_session:
+    if message.chat.id != admin_chat_id and message.chat.id not in admin_session:
         if message.text == '/start':
             sessions[message.chat.id] = {}
             sessions[message.chat.id]['last_foods'] = {}
@@ -112,8 +140,13 @@ def start(message):
             sessions[message.chat.id]['adress_info'] = {}
             bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
         else:
-            bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'], text=sessions[message.chat.id]['adress_info']['adress']+' '+message.text, reply_markup=keyb_finish)
-            if message.from_user.is_bot == False:
+            sessions[message.chat.id]['adress_info']['adress'] =\
+                '\n'.join(sessions[message.chat.id]['adress_info']['adress'].split('\n')[:-1]) + \
+                '\n'+"Ваш адрес: " + message.text    # message.text - Адрес
+            bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'],
+                                  text=sessions[message.chat.id]['adress_info']['adress'],
+                                  reply_markup=keyb_finish)
+            if not message.from_user.is_bot:
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     else:
         if message.text == '/panel':
@@ -123,7 +156,7 @@ def start(message):
                 print(message)
                 sys.stdout.flush()
             bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
-            bot.delete_message(chat_id= -1002019810166, message_id=message.message_id)
+            bot.delete_message(chat_id=admin_chat_id, message_id=message.message_id)
         else:
             if message.from_user.is_bot == False:
                 admin_session[message.from_user.id]['admin_to_change'] = message.text
@@ -152,6 +185,7 @@ def start(message):
 def query_handler(call):
     bot.answer_callback_query(callback_query_id=call.id)
     print(call.data)
+    # who pressed button = call.from_user['id']
     sys.stdout.flush()
     if call.data.split('-')[0] == 'm':
         # Удаляет сообщения возвращая пользователя в меню
@@ -164,7 +198,7 @@ def query_handler(call):
                     bot.delete_message(chat_id=call.message.chat.id, message_id=item)
                 sessions[call.message.chat.id]['last_foods'] = {}
         if call.data.split('-')[1] == 'c':
-            if sessions[call.message.chat.id]['cart_ids'] != []:
+            if sessions[call.message.chat.id]['cart_ids']:
                 for item in sessions[call.message.chat.id]['cart_ids']:
                     bot.delete_message(chat_id=call.message.chat.id, message_id=item)
                 sessions[call.message.chat.id]['cart_ids'] = []
@@ -285,7 +319,6 @@ def query_handler(call):
             a = bot.send_message(call.message.chat.id, item, reply_markup=gen_foods(item, call.message.chat.id, name='cart', temp=cart_items[item]))
             sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
-
     # Изменение кол-ва позиций в корзине
     # Edding amount of dishes in cart
     if call.data.split(';')[0] == 'crta':
@@ -326,7 +359,9 @@ def query_handler(call):
             bot.send_message(call.message.chat.id, 'Ваш заказ:\n'+ sessions[call.message.chat.id]['adress_info']['adress'], reply_markup=keyb_finish)
 
     if call.data.split('-')[0] == 'adm':
-        bot.delete_message(call.message.chat.id, call.message.message_id)
+        a = 0
+        if call.data.split('-')[1] != 'apr':
+            bot.delete_message(call.message.chat.id, call.message.message_id)
         if call.data.split('-')[1] == 'adm':
             a = bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
         if call.data.split('-')[1] == 'ad':
@@ -339,10 +374,27 @@ def query_handler(call):
         if call.data.split('-')[1] == 'db':
             a = bot.send_message(call.message.chat.id, 'Данная функция находиться в разработке...', reply_markup=keyb_db_change)
         if call.data.split('-')[1] == 'back':
-            a = bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel) 
-
-        admin_session[call.message.chat.id]['action_id'] = [a.message_id, call.data.split('-')[1]]
-        admin_session[call.message.chat.id]['last_message'] = a.text
+            a = bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel)
+        # Подтверждение заказа
+        if call.data.split('-')[1] == 'apr':
+            client_id = db.insert_client('name',  # later change to user first_name?
+                                         pending_orders[call.data.split('-')[2]]['tel'],
+                                         19,  # del age later
+                                         pending_orders[call.data.split('-')[2]]['adress'],
+                                         call.data.split('-')[2][:2],
+                                         call.data.split('-')[2][2:])
+            time_placed = str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)
+            delivery_time = db.insert_order(client_id,
+                                            time_placed,
+                                            db.get_item('Admins', call.from_user.id, 'tg_id')[0][0],
+                                            pending_orders[call.data.split('-')[2]]['cart'])
+            bot.edit_message_text(chat_id=int(call.data.split('-')[2][2:]),
+                                  message_id=pending_orders[call.data.split('-')[2]]['message_id'],
+                                  text='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут'
+                                  )
+        if a and call.data.split('-')[1] !='apr':
+            admin_session[call.message.chat.id]['action_id'] = [a.message_id, call.data.split('-')[1]]
+            admin_session[call.message.chat.id]['last_message'] = a.text
 
     if call.data.split('-')[1] == 'yes':
         if admin_session[call.message.chat.id]['last_message'] != call.message.text:
@@ -360,7 +412,22 @@ def query_handler(call):
             admin_session[call.message.chat.id]['last_message'] = call.message.text
             bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
-    
+
+    if call.data == 'o-send':
+        text = 'Ваш заказ ожидает подтверждения \n\n'
+        total_sum = 0
+        food_list = ''
+        for food, amount in sessions[call.message.chat.id]['real_cart'].items():
+            price = db.get_item('Food', food, 'name')[0][2]
+            food_list += f"{food} * {amount} шт. = {price}\n"
+            total_sum += price * amount
+        text += sessions[call.message.chat.id]['adress_info']['adress']
+        bot.edit_message_text(chat_id=call.message.chat.id,
+                              message_id=call.message.message_id,
+                              text=text)
+        adress = sessions[call.message.chat.id]['adress_info']['adress'].split('\n')[-1].split(': ')[1]
+        send_order('TG', call.message.chat.id, adress, 375291234567, # change to tel later
+                   call.message.message_id, sessions[call.message.chat.id]['real_cart'])
 
 print("Ready")
 

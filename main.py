@@ -44,6 +44,9 @@ def weekly_stat():
 
 schedule.every().day.at('23:59').do(daily_stat)
 schedule.every().sunday.at('23:59').do(weekly_stat)
+print(db.insert_order(1, '12:40', 1, {'Кока-кола 0.5л в стекле': 2}))
+
+print(str(time.localtime().tm_hour)+':'+str(time.localtime().tm_min))
 while True:
     schedule.run_pending()
     time.sleep(1)
