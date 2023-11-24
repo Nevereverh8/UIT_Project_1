@@ -72,6 +72,8 @@ def gen_menu(page, fix_pos=10, callback = ('c', 'cn')):
         keyb_categories.add(InlineKeyboardButton('Назад', callback_data=f'{callback[1]};back;{page}'))
     if fix_pos <= end < len(categories):
         keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'{callback[1]};forward;{page}')) 
+    if callback[0] == 'db':
+        keyb_categories.add(InlineKeyboardButton('Вернуться', callback_data='panel;0'))
     return keyb_categories, page
 
 # Генерирует позиции в котегории ps без слайдера
@@ -106,6 +108,12 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
         keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'crt;back;{page}'), InlineKeyboardButton('Вперед', callback_data=f'crt;forward;{page}'))
         keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m;c'))
         keyb_slider.add(InlineKeyboardButton('Оформить заказ', callback_data=f'o;o'))
+    elif name == 'db_change':
+        keyb_slider = InlineKeyboardMarkup()
+        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'dbn;back;{page}'), InlineKeyboardButton('Вперед', callback_data=f'dbn;forward;{page}'))
+        keyb_slider.add(InlineKeyboardButton('Вернуться', callback_data='panel;0'))
+
+        
     return keyb_slider, start, end, page
 
 # Отправка заказа админам
@@ -156,10 +164,10 @@ def start(message):
         if message.text == '/panel':
             if message.from_user.id == db.get_item('Admins', message.from_user.id, 'tg_id')[0][3]:
                 admin_session[message.from_user.id] = {}
-                
+                admin_session[message.from_user.id]['last_foods'] = []
                 # admin_session[message.from_user.id] = message.chat
-                print(message)
-                sys.stdout.flush()
+                # print(message)
+                # sys.stdout.flush()
             bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
             bot.delete_message(chat_id=admin_chat_id, message_id=message.message_id)
         else:
@@ -429,8 +437,18 @@ def query_handler(call):
                    call.message.message_id, sessions[call.message.chat.id]['real_cart'])
 
     if call.data.split(';')[0] == 'db':
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         if call.data.split(';')[1] == 'change':
-            bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1, callback=('db', 'dbn'))[0])           
+            bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1, callback=('db', 'dbn'))[0])
+        else:
+            print(db.get_category(call.data.split(';')[1]))
+            admin_session[call.message.chat.id]['food_list'] = db.get_category(call.data.split(';')[1])
+            slider = gen_slider(1)
+            for item in list(admin_session[call.message.chat.id]['food_list'])[slider[1]:slider[2]]:
+                a = bot.send_message(call.message.chat.id, item, reply_markup=None)
+                admin_session[call.message.chat.id]['last_foods'].append(a.message_id)
+            bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3], name='db_change')[0])
+            
     if call.data.split(';')[0] == 'dbn': 
         if call.data.split(';')[1] == 'forward':
             gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
@@ -439,6 +457,14 @@ def query_handler(call):
             gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1, callback=('db', 'dbn'))[0])
 
+    if call.data.split(';')[0] == 'panel':
+        if admin_session[call.message.chat.id]['last_foods']:
+            for id in admin_session[call.message.chat.id]['last_foods']:
+                bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+            admin_session[call.message.chat.id]['last_foods'] = []
+        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+        bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel) 
+        
     
 print("Ready")
 
