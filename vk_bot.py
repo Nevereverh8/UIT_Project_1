@@ -83,9 +83,11 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f"):
         end_ = ((num + 1) * fix_poz)
     else:
         end_ = len(dicty)
+    listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
     for x in range(num * fix_poz, end_):
-        vkinl.add_callback_button(label='s', color=VkKeyboardColor.SECONDARY,
-                                  payload={"type": flag2 + ' ;' + 'isi' + '; ' + str(x)})
+        print(x)
+        vkinl.add_callback_button(label=listy[x], color=VkKeyboardColor.SECONDARY,
+                                  payload={"type": flag2 + ' ;' + listy[x] + '; ' + str(x)})
         vkinl.add_line()
     if num == 0 and end_ != len(dicty):
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
@@ -100,7 +102,6 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f"):
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ' + str(num - 1)})
     else:
-        vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
         vkinl.add_button(label="Корзина", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     return vkinl
@@ -111,11 +112,15 @@ def position_creation(food_name, change = 0):
 
 # naming ok
 def edit_message(message, keyboard):
+    # print(keyboard.keyboard)
+    # for i in keyboard.keyboard['buttons']:
+    #     print(i)
     vk.messages.edit(
         peer_id=event.obj.peer_id,
         message=message,
         conversation_message_id=event.obj.conversation_message_id,
         keyboard=keyboard.get_keyboard())
+
 # too
 def send_message(message, keyboard):
     vk.messages.send(
@@ -130,7 +135,7 @@ def adder_of_dict_sections_for_user(dicty, user_id):
 
 print("Ready")
 for event in longpoll.listen():
-    print(sessions)
+    # print(sessions)
     # новые сообщения
     if event.type == VkBotEventType.MESSAGE_NEW:
         if event.obj.message['text'] != '':
@@ -151,9 +156,9 @@ for event in longpoll.listen():
         if event.object.user_id not in sessions:
             sessions[event.object.user_id] = {}
             adder_of_dict_sections_for_user(sessions, event.object.user_id)
-        print(event.object.payload.get('type'))
+        # print(event.object.payload.get('type'))
         # print(event.object)
-        print(event.object.user_id, 'event.object.user_id')
+        # print(event.object.user_id, 'event.object.user_id')
 
         flag = event.object.payload.get('type').split()[0]
         data = event.object.payload.get('type').split()[-1]
@@ -169,14 +174,17 @@ for event in longpoll.listen():
             last_id = edit_message('Выбирай категорию', keyb)
             # print(last_id)
         elif flag == 'cat':
-            print(event.object.payload.get('type').split(';')[1])
-            dicty_of_item = db.get_category([event.object.payload.get('type').split(';')[1]])
-            print(dicty_of_item, "dicty_of_item")
+            # print(event.object.payload.get('type').split(';')[1])
+            dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
+            # print(dicty_of_item, "dicty_of_item")
             keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item')
             last_id = edit_message('Выбирай магазин', keyb)
-        # elif flag == 'i':
-        #     keyb = key_gen(list_of_item, int(data), flag='i', flag2='item')
-        #     last_id = message_edit('Выбирай магазин', keyb)
+        elif flag == 'i':
+            print(event.object.payload.get('type'))
+            print(int(data))
+            dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
+            keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item')
+            last_id = edit_message('Выбирай магазин', keyb)
         # elif flag == 'item':
         #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
         #                            keyboard_quit)
