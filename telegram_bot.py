@@ -110,10 +110,9 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
         keyb_slider.add(InlineKeyboardButton('Оформить заказ', callback_data=f'o;o'))
     elif name == 'db_change':
         keyb_slider = InlineKeyboardMarkup()
-        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'dbn;back;{page}'), InlineKeyboardButton('Вперед', callback_data=f'dbn;forward;{page}'))
+        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'dbf;back;{page}'), InlineKeyboardButton('Вперед', callback_data=f'dbf;forward;{page}'))
         keyb_slider.add(InlineKeyboardButton('Вернуться', callback_data='panel;0'))
-
-        
+         
     return keyb_slider, start, end, page
 
 # Отправка заказа админам
@@ -485,14 +484,34 @@ def query_handler(call):
                 a = bot.send_message(call.message.chat.id, item, reply_markup=None)
                 admin_session[call.message.chat.id]['last_foods'].append(a.message_id)
             bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3], name='db_change')[0])
-            
-    if call.data.split(';')[0] == 'dbn': 
+
+    if call.data.split(';')[0] == 'dbf':
         if call.data.split(';')[1] == 'forward':
-            gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
+            slider = gen_slider(int(call.data.split(';')[2])+1, name='db_change')      
+        if call.data.split(';')[1] == 'back': 
+            slider = gen_slider(int(call.data.split(';')[2])-1, name='db_change') 
+
+        food_list = admin_session[call.message.chat.id]['food_list']
+        last_foods = admin_session[call.message.chat.id]['last_foods']
+        
+        if slider[1] < len(food_list) and slider[2] > 0:
+            for id in last_foods: 
+                bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            admin_session[call.message.chat.id]['last_foods'] = []
+            
+            for f in list(food_list.keys())[slider[1]:slider[2]]:
+                a = bot.send_message(call.message.chat.id, f'{f}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, name='db_change'))
+                admin_session[call.message.chat.id]['last_foods'].append(a.message_id)
+            bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3], name='db_change')[0])
+    
+    if call.data.split(';')[0] == 'dbn': 
+        gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
+        if call.data.split(';')[1] == 'forward':
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1, callback=('db', 'dbn'))[0])
         if call.data.split(';')[1] == 'back':
-            gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1, callback=('db', 'dbn'))[0])
+            if gen_menu_info[1] > 1:
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1, callback=('db', 'dbn'))[0])
 
     if call.data.split(';')[0] == 'panel':
         if admin_session[call.message.chat.id]['last_foods']:
