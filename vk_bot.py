@@ -109,7 +109,6 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f"):
 def position_creation(food_name, change = 0):
     pass
 
-
 # naming ok
 def edit_message(message, keyboard):
     # print(keyboard.keyboard)
@@ -174,7 +173,7 @@ for event in longpoll.listen():
             last_id = edit_message('Выбирай категорию', keyb)
             # print(last_id)
         elif flag == 'cat':
-            # print(event.object.payload.get('type').split(';')[1])
+            print(event.object.payload.get('type').split(';')[1])
             dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
             # print(dicty_of_item, "dicty_of_item")
             keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item')
@@ -182,7 +181,7 @@ for event in longpoll.listen():
         elif flag == 'i':
             print(event.object.payload.get('type'))
             print(int(data))
-            dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
+            # FIX
             keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item')
             last_id = edit_message('Выбирай магазин', keyb)
         # elif flag == 'item':
