@@ -171,7 +171,8 @@ for event in longpoll.listen():
         elif flag == 'cat':
             print(event.object.payload.get('type').split(';')[1])
             dicty_of_item = db.get_category([event.object.payload.get('type').split(';')[1]])
-            keyb = key_gen(dicty_of_item, 0, flag='i', flag2='item')
+            print(dicty_of_item, "dicty_of_item")
+            keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item')
             last_id = edit_message('Выбирай магазин', keyb)
         # elif flag == 'i':
         #     keyb = key_gen(list_of_item, int(data), flag='i', flag2='item')

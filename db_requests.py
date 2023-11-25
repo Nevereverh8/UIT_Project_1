@@ -126,7 +126,7 @@ class DataBase:
             food = con.execute(f'''
                                          SELECT name, price FROM Food
                                          WHERE category_id = (SELECT id FROM Categories
-                                                              WHERE name = '{category}'  AND stop_flag = 0)
+                                                              WHERE name = "{category}"  AND stop_flag = 0)
                                          ''')
             food = food.fetchall()
             dict_of_food = {}
