@@ -513,6 +513,7 @@ def query_handler(call):
             if gen_menu_info[1] > 1:
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1, callback=('db', 'dbn'))[0])
 
+
     if call.data.split(';')[0] == 'panel':
         if admin_session[call.message.chat.id]['last_foods']:
             for id in admin_session[call.message.chat.id]['last_foods']:
