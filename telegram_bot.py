@@ -101,7 +101,7 @@ def gen_slider(page, fix_pos=2, name = 'foods'):
     end = start + fix_pos
     if name == 'foods':
         keyb_slider = InlineKeyboardMarkup()
-        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn;back;{page}'), InlineKeyboardButton('Корзина', callback_data='cart;0'), InlineKeyboardButton('Вперед', callback_data=f'fn;forward;{page}'))
+        keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'fn;back;{page}'), InlineKeyboardButton('Ваш заказ', callback_data='o;o'), InlineKeyboardButton('Вперед', callback_data=f'fn;forward;{page}'))
         keyb_slider.add(InlineKeyboardButton('Вернуться в меню', callback_data='m;m'))
     elif name == 'cart':
         keyb_slider = InlineKeyboardMarkup()
@@ -351,8 +351,11 @@ def query_handler(call):
         if call.data.split(';')[1] == 'o':
             for id in sessions[call.message.chat.id]['cart_ids']:
                 bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+            for id in sessions[call.message.chat.id]['last_foods']:
+                bot.delete_message(chat_id=call.message.chat.id, message_id=id)
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            sessions[call.message.chat.id]['cart_ids'] = [] 
+            sessions[call.message.chat.id]['last_foods'] = {} 
+            sessions[call.message.chat.id]['cart_ids'] = []
             order_message += f'Цена заказа: {price}' 
             bot.send_message(call.message.chat.id, order_message, reply_markup=key_order)
 
@@ -512,7 +515,6 @@ def query_handler(call):
         if call.data.split(';')[1] == 'back':
             if gen_menu_info[1] > 1:
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]-1, callback=('db', 'dbn'))[0])
-
 
     if call.data.split(';')[0] == 'panel':
         if admin_session[call.message.chat.id]['last_foods']:
