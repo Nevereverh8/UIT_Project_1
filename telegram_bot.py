@@ -170,7 +170,14 @@ def start(message):
             sessions[message.chat.id]['real_cart'] = {}
             sessions[message.chat.id]['cart_ids'] = []
             sessions[message.chat.id]['adress_info'] = {}
-            bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню.""", reply_markup=keyb_menu)
+            a = bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона:""")
+            sessions[message.chat.id]['last_message_menu'] = a.message_id
+            bot.register_next_step_handler(a, phone_number)
+        # elif message.text.startswith(('+375', '80')):
+        #     bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['last_message_menu'], text=f"""Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона: {message.text}""", reply_markup=keyb_menu)
+        #     if not message.from_user.is_bot:
+        #         bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+
         else:
             sessions[message.chat.id]['adress_info']['adress'] =\
                 '\n'.join(sessions[message.chat.id]['adress_info']['adress'].split('\n')[:-1]) + \
@@ -195,7 +202,12 @@ def start(message):
                 admin_session[message.from_user.id]['admin_to_change'] = message.text
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
                 bot.edit_message_text(chat_id=message.chat.id, message_id=admin_session[message.from_user.id]['action_id'][0], text=f"{admin_session[message.from_user.id]['last_message']} {message.text}", reply_markup=admin_management(admin_session[message.from_user.id]['action_id'][1]))
-
+def phone_number(message):
+    if message.text.startswith(('+375', '80')):
+            sessions[message.chat.id]['phone'] = message.text
+            bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['last_message_menu'], text=f"""Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона: {message.text}""", reply_markup=keyb_menu)
+            if not message.from_user.is_bot:
+                bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 # call back types: can be changed
 #   m - menu
 #   cn - category navigation
