@@ -587,4 +587,3 @@ def query_handler(call):
 print("Ready")
 
 bot.infinity_polling()    
-
