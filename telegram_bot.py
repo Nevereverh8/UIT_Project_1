@@ -473,10 +473,9 @@ def query_handler(call):
         if call.data.split(';')[1] == 'apr':
             client_id = db.insert_client('name',  # later change to user first_name?
                                          pending_orders[call.data.split(';')[2]]['tel'],
-                                         19,  # del age later
                                          pending_orders[call.data.split(';')[2]]['adress'],
                                          call.data.split(';')[2][:2],
-                                         call.data.split(';')[2][2:])
+                                         int(call.data.split(';')[2][2:]))
             time_placed = str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)
             delivery_time = db.insert_order(client_id,
                                             time_placed,

@@ -200,7 +200,7 @@ class DataBase:
             else:
                 return None
 
-    def insert_client(self, name: str, tel: int, age: int, adress: str, chat_type: str, chat_id: int):
+    def insert_client(self, name: str, tel: int, adress: str, chat_type: str, chat_id: int):
         """
         If client in database - retruns id, if not - adds and return id
 
@@ -216,8 +216,8 @@ class DataBase:
             if a:
                 client_id = a[0]
             else:
-                con.execute(f'''INSERT INTO Clients (name, tel, age, adress, chat_type, chat_id)
-                                  VALUES ('{name}', {tel}, {age}, '{adress}', '{chat_type}', {chat_id}) ''')
+                con.execute(f'''INSERT INTO Clients (name, tel, adress, chat_type, chat_id)
+                                  VALUES ('{name}', {tel}, '{adress}', '{chat_type}', {chat_id}) ''')
                 client_id = con.execute('''SELECT max(id) FROM Clients''').fetchone()[0]
             return client_id
 
