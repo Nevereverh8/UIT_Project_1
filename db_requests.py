@@ -3,7 +3,7 @@ import sqlite3 as sl
 import datetime as dt
 with open('config.json') as file:
     db_path = json.load(file)['db_path']
-    print('database connected to ' + db_path)
+    print('database connected to '+ db_path)
 
 db = sl.connect(db_path, check_same_thread=False)
 
@@ -11,10 +11,9 @@ db = sl.connect(db_path, check_same_thread=False)
 if __name__ == '__main__':
     category_list = ['Напитки', 'Курица', 'Мясо', 'Рыба', 'Салаты', 'Алкогольные напитки',
                      'Пиццы', 'Соусы', 'Десерты', 'Роллы', 'Детское меню']
-    food_list = [['Кока-кола 0.5л в стекле', 2.50, 0, 1, 5], ['Бонаква 0.5л в стекле', 2.50, 0, 1, 5],
-                 ['Фанта 0.5л в стекле', 2.50, 0, 1, 5], ['Фанта 1л', 3.00, 0, 1, 5],
+    food_list = [['Кока-кола 0.5л в стекле', 2.50, 0, 1, 5], ['Бонаква 0.5л в стекле', 2.50, 0, 1, 5], ['Фанта 0.5л в стекле', 2.50, 0, 1, 5],
                  ['Куриные наггетсы 9 шт', 7.99, 0, 2, 20], ['Куриные наггетсы 15 шт', 10.49, 0, 2, 20],
-                 ['Свинныя отбивные 350 гр', 7.99, 0, 3, 25], ['Мясо по французски 350 гр', 9.99, 0, 3, 25],
+                 ['Свинные отбивные 350 гр', 7.99, 0, 3, 25], ['Мясо по французски 350 гр', 9.99, 0, 3, 25],
                  ['Филе хека 300 гр', 9.34, 0, 4, 40], ['Запеченый лосось 500 г', 20.99, 0, 4, 50],
                  ['Мимоза 350 гр', 6.20, 0, 5, 20], ['Селедь под шубой 350 гр', 7.09, 0, 5, 20],
                  ['Пиво Stella Artois 350 гр', 5.20, 0, 6, 5], ['Вино Alazan Valley 350 гр', 5.20, 0, 6, 20],
@@ -84,13 +83,12 @@ if __name__ == '__main__':
                         id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
                         name TEXT,
                         tel INTEGER,
-                        age INTEGER,
                         adress TEXT,
                         chat_type TEXT,
                         chat_id INTEGER)
                         ''')
-        sql_insert = '''INSERT INTO Clients (name, tel , age, adress, chat_type, chat_id) VALUES (?,?,?,?,?,?)'''
-        con.execute(sql_insert, ['Женя', 375291234567, 16, 'ул. Пушкина д.42 к.2, кв 69', 'VK', 123456789])
+        sql_insert = '''INSERT INTO Clients (name, tel , adress, chat_type, chat_id) VALUES (?,?,?,?,?)'''
+        con.execute(sql_insert, ['Женя', 375291234567, 'ул. Пушкина д.42 к.2, кв 69', 'VK', 123456789])
         # Food_reviews
         con.execute('''
                         CREATE TABLE IF NOT EXISTS Food_reviews(
@@ -328,4 +326,3 @@ class DataBase:
 
 
 db = DataBase()
-
