@@ -9,14 +9,15 @@ from db_requests import db
 
 
 
-GROUP_ID = '222668747'
-GROUP_TOKEN = 'vk1.a.JpminctigYnNEjIZ_Ldi5ziq9ypj8z7lolFaFkrv0Mj9KuOtSJTihFBkls-JUOeodgvKfeKK0kc1xgJNPk10C720qXUt9KH5rNCJ4iRrSVOMdQYOvTy0ZGTLkKsCzx8CsEzpMAbeKmKW8vLpj4XefJth2TGf6goUHJuFryMA_Odg5DJcKS2dSkf3BVquMLsTZaMJ1u_OJxqjJyafUCk09w'
+GROUP_ID = '168407288'
+GROUP_TOKEN = 'vk1.a.V_3LVLsyaa3Z-x1TlEmcrWA8fHL-aHH-MM5tYAAVF9qF7wwZTreoJvg187d8PG1bXEacBFTVi9jwfU8DyS-6DMmW6uPouJzV5NJl3nUL0KY855az30d9bbF5ZcnRXvC_1gPa_ZroL5sCosDoSlNj0lRAHkZNfinTvHVVUUv7YfmCEPtE_k0A0ysrGDJ1GivmCNmUxHGODcNy-tPhcvSdNA'
 API_VERSION = '5.120'
 
 text_vk = """
 Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана.\nВсе вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню\nЕсли клавиатура свернута, нажмите на 4 точки в правом нижнем углу!
 """
 HI = "s start Start начать Начало Начать начало Бот бот Старт старт скидки Скидки puta madre стартуй бля ztart retard кожаный мешок человек бот Бот БОТ"
+HI = ['s', 'start', 'Start', 'начать', 'Начало', 'Начать', 'начало', 'Бот', 'бот', 'Старт', 'старт', 'скидки', 'Скидки', 'puta', 'madre', 'стартуй', 'бля', 'ztart', 'retard', 'кожаный', 'мешок', 'человек', 'бот', 'Бот', 'БОТ']
 
 #main globals
 sessions = {}
@@ -46,11 +47,9 @@ keyboard_1.add_line()
 keyboard_1.add_callback_button(label='Мы в Телеграме!', color=VkKeyboardColor.PRIMARY,
                                payload={"type": "open_link", "link": "https://t.me/skidkinezagorami"})
 
-keyboard_quit = VkKeyboard(**settings2)
-keyboard_quit.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-
-
 def key_gen(list_, num, fix_poz=5, flag="x", flag2="f"):
+    if len(list_) % 5 == 1:
+        fix_poz = 4
     vkinl = VkKeyboard(**settings2)
     if ((num + 1) * fix_poz) < len(list_):
         end_ = ((num + 1) * fix_poz)
@@ -76,17 +75,17 @@ def key_gen(list_, num, fix_poz=5, flag="x", flag2="f"):
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     return vkinl
 
-
-def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f"):
+# not sure what 2 do
+def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None):
     vkinl = VkKeyboard(**settings2)
     if ((num + 1) * fix_poz) < len(dicty):
         end_ = ((num + 1) * fix_poz)
     else:
         end_ = len(dicty)
     listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
-    print(listy)
+    # print(listy)
     for x in range(num * fix_poz, end_):
-        print(x)
+        # print(x)
         vkinl.add_callback_button(label=listy[x], color=VkKeyboardColor.SECONDARY,
                                   payload={"type": flag2 + ' ;' + listy[x] + '; ' + str(x)})
         vkinl.add_line()
@@ -110,7 +109,7 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f"):
 def position_creation(food_name, change = 0):
     pass
 
-# naming ok
+# wtf only ME?
 def edit_message(message, keyboard):
     # print(keyboard.keyboard)
     # for i in keyboard.keyboard['buttons']:
@@ -121,7 +120,7 @@ def edit_message(message, keyboard):
         conversation_message_id=event.obj.conversation_message_id,
         keyboard=keyboard.get_keyboard())
 
-# too
+# again wtf only MN
 def send_message(message, keyboard):
     vk.messages.send(
         user_id=event.obj.message['from_id'],
@@ -145,11 +144,28 @@ for event in longpoll.listen():
                     adder_of_dict_sections_for_user(sessions, event.obj.message['from_id'])
                 # print(event.obj.message['text'])
                 if event.obj.message['text'] == 'Запустить бота!' or event.obj.message['text'] == "Меню!":
+                    print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                     keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
                     send_message('Выбирай категорию', keyb)
+                    print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                    print(type(a))
                 elif event.obj.message['text'] in HI:
-                    send_message(text_vk, keyboard_1)
-                print(sessions)
+                    print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
+                    # send_message(text_vk, keyboard_1)
+                    print(vk.messages.send(
+                        user_id=event.obj.message['from_id'],
+                        random_id=0,
+                        peer_id=event.obj.message['from_id'],
+                        keyboard=keyboard_1.get_keyboard(),
+                        message=text_vk))
+
+                elif event.obj.message['text'] == 't':
+                    print('t отработал')
+                    a = vk.messages.getChat()
+                    print(a)
+                    # keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
+                    # edit_message('Выбирай категорию', keyb)
+                # print(sessions)
     # коллбэк
     elif event.type == VkBotEventType.MESSAGE_EVENT:
         # создание словаря по id пользователя
@@ -163,29 +179,36 @@ for event in longpoll.listen():
         flag = event.object.payload.get('type').split()[0]
         data = event.object.payload.get('type').split()[-1]
         if event.object.payload.get('type') == 'open_link':
+            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
             vk.messages.sendMessageEventAnswer(
                 event_id=event.object.event_id,
                 user_id=event.object.user_id,
                 peer_id=event.object.peer_id,
                 event_data=json.dumps(event.object.payload))
+        # old design and good enough
         elif flag == 'c':
             # print(event.object)
+            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
             keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
             last_id = edit_message('Выбирай категорию', keyb)
             # print(last_id)
+        # redo this shit |
         elif flag == 'cat':
-            print(event.object.payload.get('type').split(';')[1])
+            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
+            # print(event.object.payload.get('type').split(';')[1])
             dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
             # print(dicty_of_item, "dicty_of_item")
-            keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item')
+            keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
+                               dicty_name=event.object.payload.get('type').split(';')[1])
             last_id = edit_message('Выбирай магазин', keyb)
         elif flag == 'i':
-            print(event.object.payload.get('type'))
-            print(int(data))
+            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
+            # print(event.object.payload.get('type'))
+            # print(int(data))
             # FIX
             keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item')
             last_id = edit_message('Выбирай магазин', keyb)
-        print(sessions)
+        # print(sessions)
         # elif flag == 'item':
         #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
         #                            keyboard_quit)
