@@ -291,15 +291,14 @@ def query_handler(call):
                                                          sessions[call.message.chat.id]['cart'][call.message.text]))
         if call.data.split(';')[1] == '-':
             if call.message.text in sessions[call.message.chat.id]['cart']:
-                sessions[call.message.chat.id]['cart'][call.message.text] -= 1
-            else:
-                sessions[call.message.chat.id]['cart'][call.message.text] = 1
-            bot.edit_message_text(chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id,
-                                  text=call.message.text,
-                                  reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
-                                                         call.message.chat.id,
-                                                         sessions[call.message.chat.id]['cart'][call.message.text]))
+                if sessions[call.message.chat.id]['cart'][call.message.text] != 0:
+                    sessions[call.message.chat.id]['cart'][call.message.text] -= 1
+                    bot.edit_message_text(chat_id=call.message.chat.id,
+                                          message_id=call.message.message_id,
+                                          text=call.message.text,
+                                          reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
+                                                                 call.message.chat.id,
+                                                                 sessions[call.message.chat.id]['cart'][call.message.text]))
            
 
     # Переключение страниц блюд в категории с помощью слайдера
