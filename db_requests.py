@@ -326,4 +326,3 @@ class DataBase:
 
 
 db = DataBase()
-
