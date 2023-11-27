@@ -84,6 +84,7 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f"):
     else:
         end_ = len(dicty)
     listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
+    print(listy)
     for x in range(num * fix_poz, end_):
         print(x)
         vkinl.add_callback_button(label=listy[x], color=VkKeyboardColor.SECONDARY,
@@ -134,7 +135,6 @@ def adder_of_dict_sections_for_user(dicty, user_id):
 
 print("Ready")
 for event in longpoll.listen():
-    # print(sessions)
     # новые сообщения
     if event.type == VkBotEventType.MESSAGE_NEW:
         if event.obj.message['text'] != '':
@@ -149,6 +149,7 @@ for event in longpoll.listen():
                     send_message('Выбирай категорию', keyb)
                 elif event.obj.message['text'] in HI:
                     send_message(text_vk, keyboard_1)
+                print(sessions)
     # коллбэк
     elif event.type == VkBotEventType.MESSAGE_EVENT:
         # создание словаря по id пользователя
@@ -184,6 +185,7 @@ for event in longpoll.listen():
             # FIX
             keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item')
             last_id = edit_message('Выбирай магазин', keyb)
+        print(sessions)
         # elif flag == 'item':
         #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
         #                            keyboard_quit)

@@ -1,3 +1,4 @@
+# -*- coding: utf-8-sig -*-
 import time
 
 import telebot
