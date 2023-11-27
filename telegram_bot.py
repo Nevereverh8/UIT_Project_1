@@ -27,6 +27,7 @@ keyb_order_card.add(InlineKeyboardButton('Изменить заказ', callback
 
 keyb_finish = InlineKeyboardMarkup()
 keyb_finish.add(InlineKeyboardButton('Изменить заказ', callback_data='cart;0'), InlineKeyboardButton('Изменить адрес доставки', callback_data='o;o'),  InlineKeyboardButton('Меню', callback_data='m;m'))
+# keyb_finish.add(InlineKeyboardButton('Изменить телефон', callback_data='change;phone'))
 keyb_finish.add(InlineKeyboardButton('Оформить заказ', callback_data='o;send'))
 
 keyb_panel = InlineKeyboardMarkup()
@@ -180,6 +181,7 @@ def start(message):
         #         bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
         else:
+            # bot.register_next_step_handler(a, phone_number)
             sessions[message.chat.id]['adress_info']['adress'] =\
                 '\n'.join(sessions[message.chat.id]['adress_info']['adress'].split('\n')[:-1]) + \
                 '\n'+'Ваш телефон: ' + sessions[message.chat.id]['phone'] + \
@@ -210,6 +212,7 @@ def phone_number(message):
             bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['last_message_menu'], text=f"""Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона: {message.text}""", reply_markup=keyb_menu)
             if not message.from_user.is_bot:
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
+
 # call back types: can be changed
 #   m - menu
 #   cn - category navigation
@@ -289,15 +292,14 @@ def query_handler(call):
                                                          sessions[call.message.chat.id]['cart'][call.message.text]))
         if call.data.split(';')[1] == '-':
             if call.message.text in sessions[call.message.chat.id]['cart']:
-                sessions[call.message.chat.id]['cart'][call.message.text] -= 1
-            else:
-                sessions[call.message.chat.id]['cart'][call.message.text] = 1
-            bot.edit_message_text(chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id,
-                                  text=call.message.text,
-                                  reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
-                                                         call.message.chat.id,
-                                                         sessions[call.message.chat.id]['cart'][call.message.text]))
+                if sessions[call.message.chat.id]['cart'][call.message.text] != 0:
+                    sessions[call.message.chat.id]['cart'][call.message.text] -= 1
+                    bot.edit_message_text(chat_id=call.message.chat.id,
+                                          message_id=call.message.message_id,
+                                          text=call.message.text,
+                                          reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
+                                                                 call.message.chat.id,
+                                                                 sessions[call.message.chat.id]['cart'][call.message.text]))
            
 
     # Переключение страниц блюд в категории с помощью слайдера
@@ -596,8 +598,13 @@ def query_handler(call):
             admin_session[call.message.chat.id]['last_foods'] = []
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
         bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel) 
-        
     
+    # if call.data == 'change;phone':
+    #     keyb_phone = InlineKeyboardMarkup()
+    #     keyb_phone.add(InlineKeyboardButton('Подтвердить', callback_data='done'))
+    #     a = bot.send_message(call.message.chat.id, 'Ваш телефон: ', reply_markup=keyb_phone)
+    #     sessions[call.message.chat.id]['change_phone_id'] = a.message_id
+
 print("Ready")
 
 bot.infinity_polling()    
