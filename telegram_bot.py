@@ -134,7 +134,7 @@ def gen_slider(page, fix_pos=2, name = 'foods', cal = any):
     return keyb_slider, start, end, page
 
 # Отправка заказа админам
-def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:int, message_id, cart:dict,username=''):
+def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:str, message_id, cart:dict,username=''):
     text, food_list = '', ''
     pending_orders[client_chat_type+str(client_chat_id)] = {}
     pending_orders[client_chat_type+str(client_chat_id)]['cart'] = cart
@@ -148,7 +148,7 @@ def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:int, me
         total_sum += price * amount
     text = f'Заказ из {client_chat_type} клиента {client_chat_id} @{username}\n'
     text += f'Адрес: {adress}\n'
-    text += f'Телефон: мда\n\n'
+    text += f'Телефон: {tel}\n\n'
     text += food_list+'Сумма заказа: '+str(total_sum) + ' руб.'
 
     i_kb = InlineKeyboardMarkup()
@@ -181,6 +181,7 @@ def start(message):
         else:
             sessions[message.chat.id]['adress_info']['adress'] =\
                 '\n'.join(sessions[message.chat.id]['adress_info']['adress'].split('\n')[:-1]) + \
+                '\n'+'Ваш телефон: ' + sessions[message.chat.id]['phone'] + \
                 '\n'+"Ваш адрес: " + message.text    # message.text - Адрес
             bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'],
                                   text=sessions[message.chat.id]['adress_info']['adress'],
@@ -432,7 +433,7 @@ def query_handler(call):
 
         if call.data.split(';')[1] == 'next':
             bot.delete_message(call.message.chat.id, call.message.message_id)
-            a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВведите адрес доставки: ', reply_markup=keyb_order_card)
+            a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВаш телефон: {sessions[call.message.chat.id]["phone"]}\nВведите адрес доставки: ', reply_markup=keyb_order_card)
             sessions[call.message.chat.id]['adress_info']['adress'] = f'{call.message.text}\nВведите адрес доставки:'
             sessions[call.message.chat.id]['adress_info']['id'] = a.message_id
 
@@ -543,7 +544,7 @@ def query_handler(call):
                               message_id=call.message.message_id,
                               text=text)
         adress = sessions[call.message.chat.id]['adress_info']['adress'].split('\n')[-1].split(': ')[1]
-        send_order('TG', call.message.chat.id, adress, 375291234567, # change to tel later
+        send_order('TG', call.message.chat.id, adress, sessions[call.message.chat.id]['phone'], # change to tel later
                    call.message.message_id, sessions[call.message.chat.id]['real_cart'], username=call.from_user.username)
 
     if call.data.split(';')[0] == 'db':
