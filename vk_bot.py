@@ -178,9 +178,6 @@ for event in longpoll.listen():
                 elif event.obj.message['text'] in HI:
                     print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
                     a = send_message_new(text_vk, keyboard_1)
-                elif event.obj.message['text'] == 't':
-                    print('t отработал')
-                    edit_message_new('t отработал', a)
                     # keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
                     # edit_message('Выбирай категорию', keyb)
                 # print(sessions)
@@ -208,7 +205,7 @@ for event in longpoll.listen():
             # print(event.object)
             print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
             keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
-            last_id = edit_message_event('Выбирай категорию', keyb)
+            last_id = edit_message('Выбирай категорию', keyb)
             # print(last_id)
         # redo this shit |
         elif flag == 'cat':
@@ -218,14 +215,14 @@ for event in longpoll.listen():
             # print(dicty_of_item, "dicty_of_item")
             keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
                                dicty_name=event.object.payload.get('type').split(';')[1])
-            last_id = edit_message_event('Выбирай магазин', keyb)
+            last_id = edit_message('Выбирай магазин', keyb)
         elif flag == 'i':
             print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
             # print(event.object.payload.get('type'))
             # print(int(data))
             # FIX
             keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item')
-            last_id = edit_message_event('Выбирай магазин', keyb)
+            last_id = edit_message('Выбирай магазин', keyb)
         # print(sessions)
         # elif flag == 'item':
         #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
