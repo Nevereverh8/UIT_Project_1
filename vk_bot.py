@@ -70,6 +70,7 @@ def key_gen(list_, num, fix_poz=5, flag="x", flag2="f"):
 
 
 # a lil bit sure what 2 do
+# записи сделать - Notion?
 def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, user_id=None):
     vkinl = VkKeyboard(**settings2)
     if ((num + 1) * fix_poz) < len(dicty):
