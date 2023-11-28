@@ -432,7 +432,14 @@ def query_handler(call):
 
         if call.data.split(';')[1] == 'next':
             bot.delete_message(call.message.chat.id, call.message.message_id)
-            a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВведите адрес доставки: \nВведите ваш телефон: ', reply_markup=keyb_order_card)
+            client = db.get_client(call.message.chat.id)
+            print(client)
+            if client:
+                a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВаш адрес доставки: {client[3]}\nВаш телефон: {client[2]}', reply_markup=keyb_finish)
+                sessions[call.message.chat.id]['contacts']['phone'] = client[2]
+                sessions[call.message.chat.id]['contacts']['adress'] = client[3]
+            else:
+                a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВведите адрес доставки: \nВведите ваш телефон: ', reply_markup=keyb_order_card)
             sessions[call.message.chat.id]['contacts']['contact_message'] = f'{call.message.text}\nВведите адрес доставки:'
             sessions[call.message.chat.id]['contacts']['id'] = a.message_id
 
@@ -458,6 +465,8 @@ def query_handler(call):
             a = bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel)
         # Подтверждение заказа TG
         if call.data.split(';')[1] == 'done':
+            # очистить корзину и реальную корзину
+            # clear cart and real cart
             i_kb = InlineKeyboardMarkup()
             i_kb.add(InlineKeyboardButton('Отзыв', callback_data='o;review'))
             i_kb.add(InlineKeyboardButton('В меню', callback_data='m;0'))
@@ -467,6 +476,8 @@ def query_handler(call):
                                   reply_markup=i_kb)
             pending_orders.pop(call.data.split(';')[2])
         if call.data.split(';')[1] == 'apr':
+            # Добавить проверку на клиента чтобы изменить адрес и телефон в базе
+            # Check if client exists to edit adress and phone in database 
             client_id = db.insert_client('name',  # later change to user first_name?
                                          pending_orders[call.data.split(';')[2]]['tel'],
                                          pending_orders[call.data.split(';')[2]]['contact_message'],
