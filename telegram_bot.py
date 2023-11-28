@@ -474,6 +474,8 @@ def query_handler(call):
                                   message_id=pending_orders[call.data.split(';')[2]]['message_id'],
                                   text='Спасибо что выбрали нас! Будем благодарны если вы оставите отзыв',
                                   reply_markup=i_kb)
+            print(call.data.split(';')[2][2:])
+            sessions[call.data.split(';')[2][2:]] = {}
             pending_orders.pop(call.data.split(';')[2])
         if call.data.split(';')[1] == 'apr':
             # Добавить проверку на клиента чтобы изменить адрес и телефон в базе
@@ -549,8 +551,8 @@ def query_handler(call):
             food_list += f"{food} * {amount} шт. = {price}\n"
             total_sum += price * amount
         text += '\n'.join(sessions[call.message.chat.id]['contacts']['contact_message'].split('\n')[:-1])+\
-                '\n'+"Ваш адрес: " + sessions[call.message.chat.id]['contacts']['adress'] +\
-                '\n'+"Ваш телефон: " + sessions[call.message.chat.id]['contacts']['phone'] 
+                '\n'+"Ваш адрес: " + str(sessions[call.message.chat.id]['contacts']['adress']) +\
+                '\n'+"Ваш телефон: " + str(sessions[call.message.chat.id]['contacts']['phone'])
         bot.edit_message_text(chat_id=call.message.chat.id,
                               message_id=call.message.message_id,
                               text=text)
