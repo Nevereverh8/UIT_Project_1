@@ -109,26 +109,54 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None):
 def position_creation(food_name, change = 0):
     pass
 
-# wtf only ME?
-def edit_message(message, keyboard):
+# different send and editing mess func
+# this func only for event get fucked new message cuz vkapi
+def edit_message(message, keyboard=None):
     # print(keyboard.keyboard)
     # for i in keyboard.keyboard['buttons']:
     #     print(i)
-    vk.messages.edit(
-        peer_id=event.obj.peer_id,
-        message=message,
-        conversation_message_id=event.obj.conversation_message_id,
-        keyboard=keyboard.get_keyboard())
+    if keyboard:
+        vk.messages.edit(
+            peer_id=event.obj.peer_id,
+            message=message,
+            conversation_message_id=event.obj.conversation_message_id,
+            keyboard=keyboard.get_keyboard())
+    else:
+        vk.messages.edit(
+            peer_id=event.obj.peer_id,
+            message=message,
+            conversation_message_id=event.obj.conversation_message_id)
 
-# again wtf only MN
-def send_message(message, keyboard):
-    vk.messages.send(
-        user_id=event.obj.message['from_id'],
-        random_id=0,
-        peer_id=event.obj.message['from_id'],
-        keyboard=keyboard.get_keyboard(),
-        message=message)
-    return event.obj.message['from_id']
+def send_message_event(message, keyboard=None):
+    if keyboard:
+        vk.messages.send(
+            user_id=event.object.user_id,
+            random_id=0,
+            peer_id=event.object.user_id,
+            keyboard=keyboard.get_keyboard(),
+            message=message)
+    else:
+        vk.messages.send(
+            user_id=event.object.user_id,
+            random_id=0,
+            peer_id=event.object.user_id,
+            message=message)
+
+def send_message_new(message, keyboard=None):
+    if keyboard:
+        vk.messages.send(
+            user_id=event.obj.message['from_id'],
+            random_id=0,
+            peer_id=event.obj.message['from_id'],
+            keyboard=keyboard.get_keyboard(),
+            message=message)
+    else:
+        vk.messages.send(
+            user_id=event.obj.message['from_id'],
+            random_id=0,
+            peer_id=event.obj.message['from_id'],
+            message=message)
+
 def adder_of_dict_sections_for_user(dicty, user_id):
     dicty[user_id]['temp'] = {}
 
@@ -142,27 +170,17 @@ for event in longpoll.listen():
                 if event.obj.message['from_id'] not in sessions:
                     sessions[event.obj.message['from_id']] = {}
                     adder_of_dict_sections_for_user(sessions, event.obj.message['from_id'])
-                # print(event.obj.message['text'])
+                print(event.obj.message)
                 if event.obj.message['text'] == 'Запустить бота!' or event.obj.message['text'] == "Меню!":
                     print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                     keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
-                    send_message('Выбирай категорию', keyb)
-                    print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
-                    print(type(a))
+                    send_message_new('Выбирай категорию', keyb)
                 elif event.obj.message['text'] in HI:
                     print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
-                    # send_message(text_vk, keyboard_1)
-                    print(vk.messages.send(
-                        user_id=event.obj.message['from_id'],
-                        random_id=0,
-                        peer_id=event.obj.message['from_id'],
-                        keyboard=keyboard_1.get_keyboard(),
-                        message=text_vk))
-
+                    a = send_message_new(text_vk, keyboard_1)
                 elif event.obj.message['text'] == 't':
                     print('t отработал')
-                    a = vk.messages.getChat()
-                    print(a)
+                    edit_message_new('t отработал', a)
                     # keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
                     # edit_message('Выбирай категорию', keyb)
                 # print(sessions)
@@ -190,7 +208,7 @@ for event in longpoll.listen():
             # print(event.object)
             print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
             keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
-            last_id = edit_message('Выбирай категорию', keyb)
+            last_id = edit_message_event('Выбирай категорию', keyb)
             # print(last_id)
         # redo this shit |
         elif flag == 'cat':
@@ -200,14 +218,14 @@ for event in longpoll.listen():
             # print(dicty_of_item, "dicty_of_item")
             keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
                                dicty_name=event.object.payload.get('type').split(';')[1])
-            last_id = edit_message('Выбирай магазин', keyb)
+            last_id = edit_message_event('Выбирай магазин', keyb)
         elif flag == 'i':
             print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
             # print(event.object.payload.get('type'))
             # print(int(data))
             # FIX
             keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item')
-            last_id = edit_message('Выбирай магазин', keyb)
+            last_id = edit_message_event('Выбирай магазин', keyb)
         # print(sessions)
         # elif flag == 'item':
         #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
