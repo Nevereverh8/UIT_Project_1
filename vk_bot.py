@@ -61,14 +61,11 @@ def key_gen(list_, num, fix_poz=5, flag="x", flag2="f"):
     elif num != 0 and end_ == len(list_):
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ' + str(num - 1)})
-        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     elif num != 0:
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ' + str(num + 1)})
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ' + str(num - 1)})
-    else:
-        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     return vkinl
 
 
@@ -92,18 +89,27 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, use
     if num == 0 and end_ != len(dicty):
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        vkinl.add_button(label="Корзина", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     elif num != 0 and end_ == len(dicty):
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
+        vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        vkinl.add_button(label="Корзина", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     elif num != 0:
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        vkinl.add_button(label="Корзина", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     else:
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
         vkinl.add_button(label="Корзина", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+    print(vkinl.keyboard)
     return vkinl
 
 
@@ -216,7 +222,7 @@ for event in longpoll.listen():
                 if event.obj.message['from_id'] not in sessions:
                     sessions[event.obj.message['from_id']] = {}
                     adder_of_dict_sections_for_user(sessions, event.obj.message['from_id'])
-                print(event.obj.message)
+                print(event)
                 if event.obj.message['text'] == 'Запустить бота!' or event.obj.message['text'] == "Меню!":
                     keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
                     send_message_new('Выбирай категорию', keyb)
@@ -243,7 +249,7 @@ for event in longpoll.listen():
             # print(flag, data)
             print(event.object)
             if event.object.payload.get('type') == 'open_link':
-                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 vk.messages.sendMessageEventAnswer(
                     event_id=event.object.event_id,
                     user_id=event.object.user_id,
@@ -251,24 +257,27 @@ for event in longpoll.listen():
                     event_data=json.dumps(event.object.payload))
             # old design and good enough
             elif flag == 'c':
-                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
                 last_id = edit_message('Выбирай категорию', keyb)
-                print(last_id, "last_id")
+                # print(last_id, "last_id")
             # redo this shit |
             elif flag == 'cat':
-                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
-                print(event.object.payload.get('type').split(';')[1])
+                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                # print(event.object.payload.get('type').split(';')[1])
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
                 # print(dicty_of_item, "dicty_of_item")
                 keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
                                    dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
                 last_id = edit_message('Выбирай магазин', keyb)
             elif flag == 'i':
-                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 # print(event.object.payload.get('type'))
                 # print(int(data))
                 # FIX
+                if sessions[event.object.user_id]['death_squad']:
+                    message_delete(sessions[event.object.user_id]['death_squad'], new=False)
+                    sessions[event.object.user_id]['death_squad'] = []
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
                 keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item',
                                    dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
