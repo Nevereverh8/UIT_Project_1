@@ -174,7 +174,7 @@ def start(message):
             sessions[message.chat.id]['contacts'] = {}
             sessions[message.chat.id]['contacts']['phone'] = '' #подругзить из базы
             sessions[message.chat.id]['contacts']['adress'] = '' #подгрузить из базы
-            a = bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона:""", reply_markup=keyb_menu)
+            a = bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd.""", reply_markup=keyb_menu)
             sessions[message.chat.id]['last_message_menu'] = a.message_id
 
         else:
@@ -433,9 +433,8 @@ def query_handler(call):
         if call.data.split(';')[1] == 'next':
             bot.delete_message(call.message.chat.id, call.message.message_id)
             client = db.get_client(call.message.chat.id)
-            print(client)
             if client:
-                a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВаш адрес доставки: {client[3]}\nВаш телефон: {client[2]}', reply_markup=keyb_finish)
+                a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВаш адрес: {client[3]}\nВаш телефон: {client[2]}', reply_markup=keyb_finish)
                 sessions[call.message.chat.id]['contacts']['phone'] = client[2]
                 sessions[call.message.chat.id]['contacts']['adress'] = client[3]
             else:
@@ -480,13 +479,21 @@ def query_handler(call):
         if call.data.split(';')[1] == 'apr':
             # Добавить проверку на клиента чтобы изменить адрес и телефон в базе
             # Check if client exists to edit adress and phone in database 
-            client_id = db.insert_client('name',  # later change to user first_name?
-                                         pending_orders[call.data.split(';')[2]]['tel'],
-                                         pending_orders[call.data.split(';')[2]]['contact_message'],
-                                         call.data.split(';')[2][:2],
-                                         int(call.data.split(';')[2][2:]))
+            client = db.get_client(int(call.data.split(';')[2][2:]))
+            print(client)
+            if client:
+                db.update_cell("Clients", client[0], 'tel', pending_orders[call.data.split(';')[2]]['tel'])
+                db.update_cell("Clients", client[0], 'adress', pending_orders[call.data.split(';')[2]]['contact_message'])
+            else:
+                client_id = db.insert_client('name',  # later change to user first_name?
+                                            pending_orders[call.data.split(';')[2]]['tel'],
+                                            pending_orders[call.data.split(';')[2]]['contact_message'],
+                                            call.data.split(';')[2][:2],
+                                            int(call.data.split(';')[2][2:]))
+            client = db.get_client(int(call.data.split(';')[2][2:]))
+            print(client)
             time_placed = str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)
-            delivery_time = db.insert_order(client_id,
+            delivery_time = db.insert_order(client[-1],
                                             time_placed,
                                             db.get_item('Admins', call.from_user.id, 'tg_id')[0][0],
                                             pending_orders[call.data.split(';')[2]]['cart'])
