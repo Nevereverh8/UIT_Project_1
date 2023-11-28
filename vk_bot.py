@@ -111,7 +111,8 @@ def key_gen_pos():
     vkinl = VkKeyboard(**settings2)
     vkinl.add_callback_button(label="-", color=VkKeyboardColor.PRIMARY,
                               payload={"type": 'text'})
-    vkinl.add_button(label="Кол-во: ", color=VkKeyboardColor.PRIMARY)
+    vkinl.add_callback_button(label="Кол-во: ", color=VkKeyboardColor.PRIMARY,
+                              payload={"type": ''})
     vkinl.add_callback_button(label="+", color=VkKeyboardColor.PRIMARY,
                               payload={"type": 'text'})
     vkinl.add_line()
@@ -122,11 +123,11 @@ def key_gen_pos():
 def message_delete(listy, new=True):
     if new:
         vk.messages.delete(peer_id=event.obj.message['from_id'],
-                           conversatiom_message_ids=listy,
+                           message_ids=listy,
                            delete_for_all=True)
     else:
         vk.messages.delete(peer_id=event.obj.peer_id,
-                           conversatiom_message_ids=listy,
+                           message_ids=listy,
                            delete_for_all=True)
 
 # different send and editing mess func
@@ -217,66 +218,65 @@ for event in longpoll.listen():
                     adder_of_dict_sections_for_user(sessions, event.obj.message['from_id'])
                 print(event.obj.message)
                 if event.obj.message['text'] == 'Запустить бота!' or event.obj.message['text'] == "Меню!":
-                    print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                     keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
                     send_message_new('Выбирай категорию', keyb)
                 elif event.obj.message['text'] in HI:
-                    print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                     send_message_new(text_vk, keyboard_1)
                 elif event.obj.message['text'] == 't':
-                    print(sessions[event.obj.message['from_id']]['death_squad'])
+                    # print(sessions[event.obj.message['from_id']]['death_squad'])
                     message_delete(sessions[event.obj.message['from_id']]['death_squad'])
                     sessions[event.obj.message['from_id']]['death_squad'] = []
                 # print(sessions)
     # коллбэк
     elif event.type == VkBotEventType.MESSAGE_EVENT:
-        # создание словаря по id пользователя
-        if event.object.user_id not in sessions:
-            sessions[event.object.user_id] = {}
-            adder_of_dict_sections_for_user(sessions, event.object.user_id)
-        # print(event.object.payload.get('type'))
-        # print(event.object)
-        # print(event.object.user_id, 'event.object.user_id')
-
-        flag = event.object.payload.get('type').split()[0]
-        data = event.object.payload.get('type').split()[-1]
-        print(flag, data)
-        if event.object.payload.get('type') == 'open_link':
-            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
-            vk.messages.sendMessageEventAnswer(
-                event_id=event.object.event_id,
-                user_id=event.object.user_id,
-                peer_id=event.object.peer_id,
-                event_data=json.dumps(event.object.payload))
-        # old design and good enough
-        elif flag == 'c':
-            # print(event.object)
-            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
-            keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
-            last_id = edit_message('Выбирай категорию', keyb)
-            print(last_id, "last_id")
-        # redo this shit |
-        elif flag == 'cat':
-            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
-            print(event.object.payload.get('type').split(';')[1])
-            dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
-            # print(dicty_of_item, "dicty_of_item")
-            keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
-                               dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
-            last_id = edit_message('Выбирай магазин', keyb)
-        elif flag == 'i':
-            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+        if event.object.payload.get('type') != '':
+            # создание словаря по id пользователя
+            if event.object.user_id not in sessions:
+                sessions[event.object.user_id] = {}
+                adder_of_dict_sections_for_user(sessions, event.object.user_id)
             # print(event.object.payload.get('type'))
-            # print(int(data))
-            # FIX
-            dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
-            keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item',
-                               dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
-            last_id = edit_message('Выбирай магазин', keyb)
-        print(sessions)
-        # elif flag == 'item':
-        #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
-        #                            keyboard_quit)
+            # print(event.object)
+            # print(event.object.user_id, 'event.object.user_id')
+
+            flag = event.object.payload.get('type').split()[0]
+            data = event.object.payload.get('type').split()[-1]
+            # print(flag, data)
+            print(event.object)
+            if event.object.payload.get('type') == 'open_link':
+                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                vk.messages.sendMessageEventAnswer(
+                    event_id=event.object.event_id,
+                    user_id=event.object.user_id,
+                    peer_id=event.object.peer_id,
+                    event_data=json.dumps(event.object.payload))
+            # old design and good enough
+            elif flag == 'c':
+                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
+                last_id = edit_message('Выбирай категорию', keyb)
+                print(last_id, "last_id")
+            # redo this shit |
+            elif flag == 'cat':
+                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                print(event.object.payload.get('type').split(';')[1])
+                dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
+                # print(dicty_of_item, "dicty_of_item")
+                keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
+                                   dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
+                last_id = edit_message('Выбирай магазин', keyb)
+            elif flag == 'i':
+                print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                # print(event.object.payload.get('type'))
+                # print(int(data))
+                # FIX
+                dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
+                keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item',
+                                   dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
+                last_id = edit_message('Выбирай магазин', keyb)
+            # elif flag == 'item':
+            #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
+            #                            keyboard_quit)
+            # print(sessions)
 
 """
 теперь это легаси но пусть лежит наверное
