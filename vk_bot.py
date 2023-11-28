@@ -7,27 +7,24 @@ import json
 import array
 from db_requests import db
 
-
-
 GROUP_ID = '168407288'
 GROUP_TOKEN = 'vk1.a.V_3LVLsyaa3Z-x1TlEmcrWA8fHL-aHH-MM5tYAAVF9qF7wwZTreoJvg187d8PG1bXEacBFTVi9jwfU8DyS-6DMmW6uPouJzV5NJl3nUL0KY855az30d9bbF5ZcnRXvC_1gPa_ZroL5sCosDoSlNj0lRAHkZNfinTvHVVUUv7YfmCEPtE_k0A0ysrGDJ1GivmCNmUxHGODcNy-tPhcvSdNA'
 API_VERSION = '5.120'
 
+# not so main globals
 text_vk = """
 Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана.\nВсе вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Можете ознакомится с меню, нажав кнопку меню\nЕсли клавиатура свернута, нажмите на 4 точки в правом нижнем углу!
 """
-HI = ['s', 'start', 'Start', 'начать', 'Начало', 'Начать', 'начало', 'Бот', 'бот', 'Старт', 'старт', 'скидки', 'Скидки', 'стартуй', 'бля', 'человек', 'бот', 'Бот', 'БОТ']
+HI = ['s', 'start', 'Start', 'начать', 'Начало', 'Начать', 'начало', 'Бот', 'бот', 'Старт', 'старт', 'скидки', 'Скидки',
+      'стартуй', 'бля', 'человек', 'бот', 'Бот', 'БОТ']
 
-#main globals
+# main globals
 sessions = {}
-
-
 
 # Запускаем бот
 vk_session = VkApi(token=GROUP_TOKEN, api_version=API_VERSION)
 vk = vk_session.get_api()
 longpoll = VkBotLongPoll(vk_session, group_id=GROUP_ID)
-
 
 # Настройки клавиатур
 settings = dict(one_time=False, inline=False)
@@ -44,7 +41,8 @@ keyboard_1.add_line()
 keyboard_1.add_callback_button(label='Мы в Телеграме!', color=VkKeyboardColor.PRIMARY,
                                payload={"type": "open_link", "link": "https://t.me/skidkinezagorami"})
 
-#gen keyb 4 categories
+
+# gen keyb 4 categories
 def key_gen(list_, num, fix_poz=5, flag="x", flag2="f"):
     if len(list_) % 5 == 1:
         fix_poz = 4
@@ -73,8 +71,9 @@ def key_gen(list_, num, fix_poz=5, flag="x", flag2="f"):
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     return vkinl
 
-# not sure what 2 do
-def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None):
+
+# a lil bit sure what 2 do
+def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, user_id=None):
     vkinl = VkKeyboard(**settings2)
     if ((num + 1) * fix_poz) < len(dicty):
         end_ = ((num + 1) * fix_poz)
@@ -84,9 +83,12 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None):
     print(listy)
     for x in range(num * fix_poz, end_):
         # change here
-        vkinl.add_callback_button(label=listy[x], color=VkKeyboardColor.SECONDARY,
-                                  payload={"type": flag2 + ' ;' + listy[x] + '; ' + str(x)})
-        vkinl.add_line()
+        death_id = send_message_event(listy[x], key_gen_pos())
+        print(death_id)
+        sessions[user_id]['death_squad'].append(death_id)
+        # vkinl.add_callback_button(label=listy[x], color=VkKeyboardColor.SECONDARY,
+        #                           payload={"type": flag2 + ' ;' + listy[x] + '; ' + str(x)})
+        # vkinl.add_line()
     if num == 0 and end_ != len(dicty):
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
@@ -104,26 +106,47 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None):
         vkinl.add_button(label="Корзина", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
     return vkinl
 
-def position_creation(food_name, change = 0):
-    pass
+
+def key_gen_pos():
+    vkinl = VkKeyboard(**settings2)
+    vkinl.add_callback_button(label="-", color=VkKeyboardColor.PRIMARY,
+                              payload={"type": 'text'})
+    vkinl.add_button(label="Кол-во: ", color=VkKeyboardColor.PRIMARY)
+    vkinl.add_callback_button(label="+", color=VkKeyboardColor.PRIMARY,
+                              payload={"type": 'text'})
+    vkinl.add_line()
+    vkinl.add_callback_button(label="Добавить в корзину", color=VkKeyboardColor.PRIMARY,
+                              payload={"type": 'text'})
+    return vkinl
+
+def message_delete(listy, new=True):
+    if new:
+        vk.messages.delete(peer_id=event.obj.message['from_id'],
+                           conversatiom_message_ids=listy,
+                           delete_for_all=True)
+    else:
+        vk.messages.delete(peer_id=event.obj.peer_id,
+                           conversatiom_message_ids=listy,
+                           delete_for_all=True)
 
 # different send and editing mess func
-# def edit_message_new(message, some_shit, keyboard=None):
-#     # print(keyboard.keyboard)
-#     # for i in keyboard.keyboard['buttons']:
-#     #     print(i)
-#     print(message, some_shit)
-#     if keyboard:
-#         vk.messages.edit(
-#             peer_id=event.obj.message['from_id'],
-#             message=message,
-#             cmid=some_shit,
-#             keyboard=keyboard.get_keyboard())
-#     else:
-#         vk.messages.edit(
-#             peer_id=event.obj.message['from_id'],
-#             message=message,
-#             cmid=some_shit)
+def edit_message_new(message, mes_id, keyboard=None):
+    # print(keyboard.keyboard)
+    # for i in keyboard.keyboard['buttons']:
+    #     print(i)
+    print(message, mes_id)
+    if keyboard:
+        vk.messages.edit(
+            peer_id=event.obj.message['from_id'],
+            message_id=mes_id,
+            message=message,
+            keyboard=keyboard.get_keyboard())
+    else:
+        vk.messages.edit(
+            peer_id=event.obj.message['from_id'],
+            message_id=mes_id,
+            message=message)
+
 
 # this func only for event get fucked new message cuz vkapi
 def edit_message(message, keyboard=None):
@@ -142,20 +165,23 @@ def edit_message(message, keyboard=None):
             message=message,
             conversation_message_id=event.obj.conversation_message_id)
     return mes_id
+
+
 def send_message_event(message, keyboard=None):
     if keyboard:
-        vk.messages.send(
+        mes_id = vk.messages.send(
             user_id=event.object.user_id,
             random_id=0,
             peer_id=event.object.user_id,
             keyboard=keyboard.get_keyboard(),
             message=message)
     else:
-        vk.messages.send(
+        mes_id = vk.messages.send(
             user_id=event.object.user_id,
             random_id=0,
             peer_id=event.object.user_id,
             message=message)
+    return mes_id
 
 def send_message_new(message, keyboard=None):
     if keyboard:
@@ -172,9 +198,12 @@ def send_message_new(message, keyboard=None):
             peer_id=event.obj.message['from_id'],
             message=message)
     return mes_id
+
+
 def adder_of_dict_sections_for_user(dicty, user_id):
     dicty[user_id]['temp'] = {}
     dicty[user_id]['death_squad'] = []
+
 
 print("Ready")
 for event in longpoll.listen():
@@ -192,10 +221,12 @@ for event in longpoll.listen():
                     keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
                     send_message_new('Выбирай категорию', keyb)
                 elif event.obj.message['text'] in HI:
-                    print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
-                    a = send_message_new(text_vk, keyboard_1)
-                # elif event.obj.message['text'] == 't':
-                #     edit_message_new('Выбирай категорию', a)
+                    print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
+                    send_message_new(text_vk, keyboard_1)
+                elif event.obj.message['text'] == 't':
+                    print(sessions[event.obj.message['from_id']]['death_squad'])
+                    message_delete(sessions[event.obj.message['from_id']]['death_squad'])
+                    sessions[event.obj.message['from_id']]['death_squad'] = []
                 # print(sessions)
     # коллбэк
     elif event.type == VkBotEventType.MESSAGE_EVENT:
@@ -211,7 +242,7 @@ for event in longpoll.listen():
         data = event.object.payload.get('type').split()[-1]
         print(flag, data)
         if event.object.payload.get('type') == 'open_link':
-            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
+            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
             vk.messages.sendMessageEventAnswer(
                 event_id=event.object.event_id,
                 user_id=event.object.user_id,
@@ -220,33 +251,32 @@ for event in longpoll.listen():
         # old design and good enough
         elif flag == 'c':
             # print(event.object)
-            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
+            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
             keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
             last_id = edit_message('Выбирай категорию', keyb)
             print(last_id, "last_id")
         # redo this shit |
         elif flag == 'cat':
-            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
+            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
             print(event.object.payload.get('type').split(';')[1])
             dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
             # print(dicty_of_item, "dicty_of_item")
             keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
-                               dicty_name=event.object.payload.get('type').split(';')[1])
+                               dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
             last_id = edit_message('Выбирай магазин', keyb)
         elif flag == 'i':
-            print(event.obj.conversation_message_id , "event.obj.conversation_message_id")
+            print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
             # print(event.object.payload.get('type'))
             # print(int(data))
             # FIX
             dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
-            keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item', dicty_name=event.object.payload.get('type').split(';')[1])
+            keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item',
+                               dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
             last_id = edit_message('Выбирай магазин', keyb)
-        # print(sessions)
+        print(sessions)
         # elif flag == 'item':
         #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
         #                            keyboard_quit)
-
-
 
 """
 теперь это легаси но пусть лежит наверное
