@@ -80,7 +80,7 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, use
     print(listy)
     for x in range(num * fix_poz, end_):
         # change here
-        death_id = send_message_event(listy[x], key_gen_pos())
+        death_id = send_message_event(listy[x], key_gen_pos(listy[x], user_id))
         print(death_id)
         sessions[user_id]['death_squad'].append(death_id)
         # vkinl.add_callback_button(label=listy[x], color=VkKeyboardColor.SECONDARY,
@@ -113,11 +113,16 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, use
     return vkinl
 
 
-def key_gen_pos():
+def key_gen_pos(pos_name, user_id):
+    if pos_name not in sessions[user_id]['temp']:
+        sessions[user_id]['temp'][pos_name] = 0
+        but_text = "Кол-во: 0"
+    else:
+        but_text = f"Кол-во: {sessions[user_id]['temp'][pos_name]}"
     vkinl = VkKeyboard(**settings2)
     vkinl.add_callback_button(label="-", color=VkKeyboardColor.PRIMARY,
                               payload={"type": 'text'})
-    vkinl.add_callback_button(label="Кол-во: ", color=VkKeyboardColor.PRIMARY,
+    vkinl.add_callback_button(label=but_text, color=VkKeyboardColor.PRIMARY,
                               payload={"type": ''})
     vkinl.add_callback_button(label="+", color=VkKeyboardColor.PRIMARY,
                               payload={"type": 'text'})
@@ -243,11 +248,10 @@ for event in longpoll.listen():
             # print(event.object.payload.get('type'))
             # print(event.object)
             # print(event.object.user_id, 'event.object.user_id')
-
             flag = event.object.payload.get('type').split()[0]
             data = event.object.payload.get('type').split()[-1]
             # print(flag, data)
-            print(event.object)
+            # print(event.object)
             if event.object.payload.get('type') == 'open_link':
                 # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 vk.messages.sendMessageEventAnswer(
@@ -257,31 +261,32 @@ for event in longpoll.listen():
                     event_data=json.dumps(event.object.payload))
             # old design and good enough
             elif flag == 'c':
-                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
                 last_id = edit_message('Выбирай категорию', keyb)
-                # print(last_id, "last_id")
-            # redo this shit |
+            # fine for now
             elif flag == 'cat':
-                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 # print(event.object.payload.get('type').split(';')[1])
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
                 # print(dicty_of_item, "dicty_of_item")
                 keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
-                                   dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
-                last_id = edit_message('Выбирай магазин', keyb)
+                                   dicty_name=event.object.payload.get('type').split(';')[1],
+                                   user_id=event.object.user_id)
+                if not dicty_of_item:
+                    last_id = edit_message('В данной категории на данный момент нет товаров', keyb)
+                else:
+                    last_id = edit_message('Навигация', keyb)
             elif flag == 'i':
                 # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 # print(event.object.payload.get('type'))
-                # print(int(data))
-                # FIX
+                # FIXed mostly
                 if sessions[event.object.user_id]['death_squad']:
                     message_delete(sessions[event.object.user_id]['death_squad'], new=False)
                     sessions[event.object.user_id]['death_squad'] = []
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
                 keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item',
                                    dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
-                last_id = edit_message('Выбирай магазин', keyb)
+                last_id = edit_message('Навигация', keyb)
+            print(event)
             # elif flag == 'item':
             #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
             #                            keyboard_quit)
