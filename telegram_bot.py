@@ -140,7 +140,7 @@ def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:str, me
     text, food_list = '', ''
     pending_orders[client_chat_type+str(client_chat_id)] = {}
     pending_orders[client_chat_type+str(client_chat_id)]['cart'] = cart
-    pending_orders[client_chat_type+str(client_chat_id)]['adress'] = adress
+    pending_orders[client_chat_type+str(client_chat_id)]['contact_message'] = adress
     pending_orders[client_chat_type+str(client_chat_id)]['tel'] = tel
     pending_orders[client_chat_type+str(client_chat_id)]['message_id'] = message_id
     total_sum = 0
@@ -171,24 +171,29 @@ def start(message):
             sessions[message.chat.id]['food_list'] = [] #Удалить потом
             sessions[message.chat.id]['real_cart'] = {}
             sessions[message.chat.id]['cart_ids'] = []
-            sessions[message.chat.id]['adress_info'] = {}
-            a = bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона:""")
+            sessions[message.chat.id]['contacts'] = {}
+            sessions[message.chat.id]['contacts']['phone'] = '' #подругзить из базы
+            sessions[message.chat.id]['contacts']['adress'] = '' #подгрузить из базы
+            a = bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона:""", reply_markup=keyb_menu)
             sessions[message.chat.id]['last_message_menu'] = a.message_id
-            bot.register_next_step_handler(a, phone_number)
-        # elif message.text.startswith(('+375', '80')):
-        #     bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['last_message_menu'], text=f"""Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона: {message.text}""", reply_markup=keyb_menu)
-        #     if not message.from_user.is_bot:
-        #         bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
         else:
-            # bot.register_next_step_handler(a, phone_number)
-            sessions[message.chat.id]['adress_info']['adress'] =\
-                '\n'.join(sessions[message.chat.id]['adress_info']['adress'].split('\n')[:-1]) + \
-                '\n'+'Ваш телефон: ' + sessions[message.chat.id]['phone'] + \
-                '\n'+"Ваш адрес: " + message.text    # message.text - Адрес
-            bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['adress_info']['id'],
-                                  text=sessions[message.chat.id]['adress_info']['adress'],
-                                  reply_markup=keyb_finish)
+            if message.text.startswith(('+375', '80')):
+                sessions[message.chat.id]['contacts']['phone'] = message.text
+            else:
+                sessions[message.chat.id]['contacts']['adress'] = message.text
+            result = '\n'.join(sessions[message.chat.id]['contacts']['contact_message'].split('\n')[:-1]) + \
+                    '\n'+"Ваш адрес: " + sessions[message.chat.id]['contacts']['adress'] +\
+                    '\n'+"Ваш телефон: " + sessions[message.chat.id]['contacts']['phone']   # message.text - Адрес
+            if sessions[message.chat.id]['contacts']['adress'] and sessions[message.chat.id]['contacts']['phone']:
+                bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['contacts']['id'],
+                                        text=result,
+                                        reply_markup=keyb_finish)
+            else:
+                bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['contacts']['id'],
+                                        text=result,
+                                        reply_markup=keyb_order_card)
+                
             if not message.from_user.is_bot:
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     else:
@@ -196,9 +201,6 @@ def start(message):
             if message.from_user.id == db.get_item('Admins', message.from_user.id, 'tg_id')[0][3]:
                 admin_session[message.from_user.id] = {}
                 admin_session[message.from_user.id]['last_foods'] = []
-                # admin_session[message.from_user.id] = message.chat
-                # print(message)
-                # sys.stdout.flush()
             bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
             bot.delete_message(chat_id=admin_chat_id, message_id=message.message_id)
         else:
@@ -206,12 +208,6 @@ def start(message):
                 admin_session[message.from_user.id]['admin_to_change'] = message.text
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
                 bot.edit_message_text(chat_id=message.chat.id, message_id=admin_session[message.from_user.id]['action_id'][0], text=f"{admin_session[message.from_user.id]['last_message']} {message.text}", reply_markup=admin_management(admin_session[message.from_user.id]['action_id'][1]))
-def phone_number(message):
-    if message.text.startswith(('+375', '80')):
-            sessions[message.chat.id]['phone'] = message.text
-            bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['last_message_menu'], text=f"""Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd. \n\n Для дальнейшей связи с вами введите свой номер телефона: {message.text}""", reply_markup=keyb_menu)
-            if not message.from_user.is_bot:
-                bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
 
 # call back types: can be changed
 #   m - menu
@@ -436,12 +432,12 @@ def query_handler(call):
 
         if call.data.split(';')[1] == 'next':
             bot.delete_message(call.message.chat.id, call.message.message_id)
-            a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВаш телефон: {sessions[call.message.chat.id]["phone"]}\nВведите адрес доставки: ', reply_markup=keyb_order_card)
-            sessions[call.message.chat.id]['adress_info']['adress'] = f'{call.message.text}\nВведите адрес доставки:'
-            sessions[call.message.chat.id]['adress_info']['id'] = a.message_id
+            a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВведите адрес доставки: \nВведите ваш телефон: ', reply_markup=keyb_order_card)
+            sessions[call.message.chat.id]['contacts']['contact_message'] = f'{call.message.text}\nВведите адрес доставки:'
+            sessions[call.message.chat.id]['contacts']['id'] = a.message_id
 
         if call.data.split(';')[1] == 'finish':
-            bot.send_message(call.message.chat.id, 'Ваш заказ:\n'+ sessions[call.message.chat.id]['adress_info']['adress'], reply_markup=keyb_finish)
+            bot.send_message(call.message.chat.id, 'Ваш заказ:\n'+ sessions[call.message.chat.id]['contacts']['contact_message'], reply_markup=keyb_finish)
 
     if call.data.split(';')[0] == 'adm':
         a = 0
@@ -473,10 +469,9 @@ def query_handler(call):
         if call.data.split(';')[1] == 'apr':
             client_id = db.insert_client('name',  # later change to user first_name?
                                          pending_orders[call.data.split(';')[2]]['tel'],
-                                         19,  # del age later
-                                         pending_orders[call.data.split(';')[2]]['adress'],
+                                         pending_orders[call.data.split(';')[2]]['contact_message'],
                                          call.data.split(';')[2][:2],
-                                         call.data.split(';')[2][2:])
+                                         int(call.data.split(';')[2][2:]))
             time_placed = str(time.localtime().tm_hour) + ':' + str(time.localtime().tm_min)
             delivery_time = db.insert_order(client_id,
                                             time_placed,
@@ -542,12 +537,13 @@ def query_handler(call):
             price = db.get_item('Food', food, 'name')[0][2]
             food_list += f"{food} * {amount} шт. = {price}\n"
             total_sum += price * amount
-        text += sessions[call.message.chat.id]['adress_info']['adress']
+        text += '\n'.join(sessions[call.message.chat.id]['contacts']['contact_message'].split('\n')[:-1])+\
+                '\n'+"Ваш адрес: " + sessions[call.message.chat.id]['contacts']['adress'] +\
+                '\n'+"Ваш телефон: " + sessions[call.message.chat.id]['contacts']['phone'] 
         bot.edit_message_text(chat_id=call.message.chat.id,
                               message_id=call.message.message_id,
                               text=text)
-        adress = sessions[call.message.chat.id]['adress_info']['adress'].split('\n')[-1].split(': ')[1]
-        send_order('TG', call.message.chat.id, adress, sessions[call.message.chat.id]['phone'], # change to tel later
+        send_order('TG', call.message.chat.id, sessions[call.message.chat.id]['contacts']['adress'], sessions[call.message.chat.id]['contacts']['phone'], # change to tel later
                    call.message.message_id, sessions[call.message.chat.id]['real_cart'], username=call.from_user.username)
 
     if call.data.split(';')[0] == 'db':
