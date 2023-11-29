@@ -166,26 +166,34 @@ def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:str, me
 def start(message):
     if message.chat.id != admin_chat_id and message.chat.id not in admin_session:
         if message.text == '/start':
-            sessions[message.chat.id] = {}
-            sessions[message.chat.id]['last_foods'] = {}
-            sessions[message.chat.id]['cart'] = {}
-            sessions[message.chat.id]['food_list'] = [] #Удалить потом
-            sessions[message.chat.id]['real_cart'] = {}
-            sessions[message.chat.id]['cart_ids'] = []
-            sessions[message.chat.id]['contacts'] = {}
-            sessions[message.chat.id]['contacts']['phone'] = '' #подругзить из базы
-            sessions[message.chat.id]['contacts']['adress'] = '' #подгрузить из базы
+            client_id = db.get_client(message.chat.id)[-1]
+            if not client_id:
+                client_id = message.chat.id
+            sessions[client_id] = {}
+            sessions[client_id]['last_foods'] = {}
+            sessions[client_id]['cart'] = {}
+            sessions[client_id]['food_list'] = [] #Удалить потом
+            sessions[client_id]['real_cart'] = {}
+            sessions[client_id]['cart_ids'] = []
+            sessions[client_id]['contacts'] = {}
+            sessions[client_id]['contacts']['phone'] = '' #подругзить из базы
+            sessions[client_id]['contacts']['adress'] = '' #подгрузить из базы
             a = bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd.""", reply_markup=keyb_menu)
             sessions[message.chat.id]['last_message_menu'] = a.message_id
-
+        elif message.text == '/menu':
+            bot.delete_message(message.chat.id, message.message_id)
+            if sessions[message.chat.id]:
+                a = bot.send_message(message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
+                sessions[message.chat.id]['last_message_menu'] = a.message_id
         else:
             if message.text.startswith(('+375', '80')):
                 sessions[message.chat.id]['contacts']['phone'] = message.text
             else:
                 sessions[message.chat.id]['contacts']['adress'] = message.text
             result = '\n'.join(sessions[message.chat.id]['contacts']['contact_message'].split('\n')[:-1]) + \
+                    '\n'+'Что-бы изменить телефон или адрес введите их с клавиатуры'+\
                     '\n'+"Ваш адрес: " + sessions[message.chat.id]['contacts']['adress'] +\
-                    '\n'+"Ваш телефон: " + sessions[message.chat.id]['contacts']['phone']   # message.text - Адрес
+                    '\n'+"Ваш телефон: " + str(sessions[message.chat.id]['contacts']['phone'])   # message.text - Адрес
             if sessions[message.chat.id]['contacts']['adress'] and sessions[message.chat.id]['contacts']['phone']:
                 bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['contacts']['id'],
                                         text=result,
@@ -435,7 +443,7 @@ def query_handler(call):
             bot.delete_message(call.message.chat.id, call.message.message_id)
             client = db.get_client(call.message.chat.id)
             if client:
-                a = bot.send_message(call.message.chat.id, f'{call.message.text}\nВаш адрес: {client[3]}\nВаш телефон: {client[2]}', reply_markup=keyb_finish)
+                a = bot.send_message(call.message.chat.id, f'{call.message.text}\nЧто-бы изменить телефон или адрес введите их с клавиатуры\nВаш адрес: {client[3]}\nВаш телефон: {client[2]}', reply_markup=keyb_finish)
                 sessions[call.message.chat.id]['contacts']['phone'] = client[2]
                 sessions[call.message.chat.id]['contacts']['adress'] = client[3]
             else:
