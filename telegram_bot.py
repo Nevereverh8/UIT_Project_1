@@ -55,8 +55,8 @@ def admin_management(call_data):
         callback = 'edit;yes'
         button_text = 'Изменить'
     keyb_yes_back.add(InlineKeyboardButton('Назад', callback_data='adm;adm'), InlineKeyboardButton(button_text, callback_data=callback))
-    
-    return keyb_yes_back 
+
+    return keyb_yes_back
 
 # Генерирует 1-ую страницу меню
 # Gen 1-st menu page
@@ -73,7 +73,7 @@ def gen_menu(page, fix_pos=10, callback = ('c', 'cn')):
     if end > fix_pos:
         keyb_categories.add(InlineKeyboardButton('Назад', callback_data=f'{callback[1]};back;{page}'))
     if fix_pos <= end < len(categories):
-        keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'{callback[1]};forward;{page}')) 
+        keyb_categories.add(InlineKeyboardButton('Впред', callback_data=f'{callback[1]};forward;{page}'))
     if callback[0] == 'db':
         keyb_categories.add(InlineKeyboardButton('Вернуться', callback_data='panel;0'))
     return keyb_categories, page
@@ -83,9 +83,6 @@ def gen_menu(page, fix_pos=10, callback = ('c', 'cn')):
 def gen_foods(food, chat_id, temp=0, name='foods', state = 'c' ): # c-changeable , n-no button
     dish = f'{food[0]} цена за шт. - {food[1]}'
     print(food[0], 'food[0]')
-
-    #print(sessions[chat_id]['cart'], 'словарь')
-    print(sessions[chat_id]['real_cart'], 'словарь')
     keyb_food = InlineKeyboardMarkup()
     if name == 'foods':
         if dish in sessions[chat_id]['cart']:
@@ -101,7 +98,7 @@ def gen_foods(food, chat_id, temp=0, name='foods', state = 'c' ): # c-changeable
                                                    callback_data='None;0'))
         elif state == 'c' and temp != '0':
             keyb_food.add(InlineKeyboardButton('Добавить в корзину',
-                                                callback_data=f'f;{temp};'))  # Добавить в calldatу кол-во товара, из кнопки кол-во
+                                               callback_data=f'f;{temp};'))  # Добавить в calldatу кол-во товара, из кнопки кол-во
         elif state == 'n':
             keyb_food.add(InlineKeyboardButton('Уже в корзине',
                                                callback_data='None;0'))
@@ -111,8 +108,11 @@ def gen_foods(food, chat_id, temp=0, name='foods', state = 'c' ): # c-changeable
     elif name == 'db_change':
         print(db.get_item('Food', food[0], 'name'))
         keyb_food.add(InlineKeyboardButton('Убрать товар из меню', callback_data='db;stop'))
+    elif name == 'adm_foods':
+        keyb_food.add(InlineKeyboardButton('-', callback_data=f'adm;f-;{state}'),
+                      InlineKeyboardButton('+', callback_data=f'adm;f+;{state}'))
     return keyb_food
-    
+
 # Отдельный слайдер для блюд в категории
 # Unique slider for dishes in categories
 def gen_slider(page, fix_pos=2, name = 'foods', cal = any):
@@ -132,7 +132,7 @@ def gen_slider(page, fix_pos=2, name = 'foods', cal = any):
         keyb_slider = InlineKeyboardMarkup()
         keyb_slider.add(InlineKeyboardButton('Назад', callback_data=f'dbf;back;{page}'), InlineKeyboardButton('Вперед', callback_data=f'dbf;forward;{page}'))
         keyb_slider.add(InlineKeyboardButton('Вернуться', callback_data='panel;0'))
-         
+
     return keyb_slider, start, end, page
 
 # Отправка заказа админам
@@ -157,8 +157,9 @@ def send_order(client_chat_type:str, client_chat_id:int, adress:str, tel:str, me
     i_kb.add(InlineKeyboardButton('Подтвердить', callback_data=f'adm;apr;{client_chat_type}{str(client_chat_id)}'),
              InlineKeyboardButton('X Вне зоны охвата', callback_data=f'adm;deca;{client_chat_type}{str(client_chat_id)}'),
              InlineKeyboardButton('X Неправильные данные', callback_data=f'adm;deco;{client_chat_type}{str(client_chat_id)}'))
+    i_kb.add(InlineKeyboardButton('Изменить заказ', callback_data=f'adm;ch;{client_chat_type}{str(client_chat_id)}'))
     a = bot.send_message(admin_chat_id, text, reply_markup=i_kb)
-    pending_orders[client_chat_type+str(client_chat_id)]['admin_message_id'] = a.message_id
+    pending_orders[client_chat_type+str(client_chat_id)]['admin_messages'] = [a.message_id]
 
 
 @bot.message_handler(content_types=['text'])
@@ -193,7 +194,7 @@ def start(message):
                 bot.edit_message_text(chat_id=message.chat.id, message_id=sessions[message.chat.id]['contacts']['id'],
                                         text=result,
                                         reply_markup=keyb_order_card)
-                
+
             if not message.from_user.is_bot:
                 bot.delete_message(chat_id=message.chat.id, message_id=message.message_id)
     else:
@@ -201,7 +202,7 @@ def start(message):
             if message.from_user.id == db.get_item('Admins', message.from_user.id, 'tg_id')[0][3]:
                 admin_session[message.from_user.id] = {}
                 admin_session[message.from_user.id]['last_foods'] = []
-            bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel) 
+            bot.send_message(chat_id=message.from_user.id, text = 'Панель управления', reply_markup=keyb_panel)
             bot.delete_message(chat_id=admin_chat_id, message_id=message.message_id)
         else:
             if message.from_user.is_bot == False:
@@ -232,7 +233,7 @@ def query_handler(call):
         # Удаляет сообщения возвращая пользователя в меню
         # Delete message returning the user to menu
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-        
+
         if call.data.split(';')[1] == 'm':
             if sessions[call.message.chat.id]['last_foods'] != {}:
                 for item in sessions[call.message.chat.id]['last_foods']:
@@ -245,7 +246,7 @@ def query_handler(call):
                 sessions[call.message.chat.id]['cart_ids'] = []
         a = bot.send_message(call.message.chat.id, "Меню", reply_markup=gen_menu(1)[0])
         sessions[call.message.chat.id]['last_message_menu'] = a.message_id
-        
+
     # Cлайдер листает странцы
     # Slider to change pages
     if call.data.split(';')[0] == 'cn':
@@ -257,7 +258,7 @@ def query_handler(call):
         if call.data.split(';')[1] == 'forward':
             gen_menu_info = gen_menu(int(call.data.split(';')[2]))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['last_message_menu'], text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1)[0])
-    
+
     # Позиции в категории
     # Food in category
     if call.data.split(';')[0] == 'c':
@@ -273,7 +274,7 @@ def query_handler(call):
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
     # Callback для кнопок + и -. UPD 02:1 18.11
-    # Callback buttons + and -, I tend to think that it is shit code
+    # Callback buttons + and -, I tend to think that it is bad code
     if call.data.split(';')[0] == 'fa':
         if call.data.split(';')[1] == '+':
             if call.message.text in sessions[call.message.chat.id]['cart']:
@@ -296,19 +297,19 @@ def query_handler(call):
                                           reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
                                                                  call.message.chat.id,
                                                                  sessions[call.message.chat.id]['cart'][call.message.text]))
-           
+
 
     # Переключение страниц блюд в категории с помощью слайдера
     # Switching dishes pages in categories with help of slider
     if call.data.split(';')[0] == 'fn':
         if call.data.split(';')[1] == 'forward':
-            slider = gen_slider(int(call.data.split(';')[2])+1)                 
+            slider = gen_slider(int(call.data.split(';')[2])+1)
         elif call.data.split(';')[1] == 'back':
             slider = gen_slider(int(call.data.split(';')[2])-1)
         food_list = sessions[call.message.chat.id]['food_list']
         last_foods = sessions[call.message.chat.id]['last_foods']
-        
-        for id in last_foods: 
+
+        for id in last_foods:
             print(sessions[call.message.chat.id]['last_foods'], id)
             sys.stdout.flush()
             bot.delete_message(chat_id=call.message.chat.id, message_id=id)
@@ -346,10 +347,10 @@ def query_handler(call):
                                                          call.message.chat.id,
                                                          0))
         print(sessions[call.message.chat.id]['real_cart'])
-        sys.stdout.flush() 
-    
+        sys.stdout.flush()
+
     if call.data.split(';')[0] == 'cart':
-       
+
         for id in sessions[call.message.chat.id]['last_foods']:
             bot.delete_message(chat_id=call.message.chat.id, message_id=id)
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
@@ -371,7 +372,7 @@ def query_handler(call):
                 sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
             a = bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
             sessions[call.message.chat.id]['cart_navigation'] = a.message_id
-           
+
     # Навигация по корзине
     # Cart navigation
     if call.data.split(';')[0] == 'crt':
@@ -380,7 +381,7 @@ def query_handler(call):
             slider = gen_slider(int(call.data.split(';')[2])+1, name='cart', cal=call.message.chat.id)
         elif call.data.split(';')[1] == 'back':
             slider = gen_slider(int(call.data.split(';')[2])-1, name='cart', cal=call.message.chat.id)
-        
+
         for id in sessions[call.message.chat.id]['cart_ids'][1:]:
             bot.delete_message(chat_id=call.message.chat.id, message_id=id)
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
@@ -407,7 +408,7 @@ def query_handler(call):
                 sessions[call.message.chat.id]['real_cart'].pop(call.message.text)
                 sessions[call.message.chat.id]['cart_ids'].remove(call.message.message_id)
                 slider = gen_slider(1, name='cart', cal=call.message.chat.id)
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['cart_navigation'], 
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=sessions[call.message.chat.id]['cart_navigation'],
                                       text="Навигация", reply_markup=slider[0])
                 bot.delete_message(call.message.chat.id, call.message.message_id)
 
@@ -417,7 +418,7 @@ def query_handler(call):
         print(db.get_item('Food', 'Кока-кола 0.5л в стекле', 'name'))
 
         for item in sessions[call.message.chat.id]['real_cart']:
-                order_message += item + ', ' + str(sessions[call.message.chat.id]['real_cart'][item])+ ' шт. : ' + str(sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2])+' руб' + '\n'
+                order_message += item + ', ' + str(sessions[call.message.chat.id]['real_cart'][item]) + ' шт. : ' + str(sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2])+' руб' + '\n'
                 price += sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2]
         if call.data.split(';')[1] == 'o':
             for id in sessions[call.message.chat.id]['cart_ids']:
@@ -425,9 +426,9 @@ def query_handler(call):
             for id in sessions[call.message.chat.id]['last_foods']:
                 bot.delete_message(chat_id=call.message.chat.id, message_id=id)
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            sessions[call.message.chat.id]['last_foods'] = {} 
+            sessions[call.message.chat.id]['last_foods'] = {}
             sessions[call.message.chat.id]['cart_ids'] = []
-            order_message += f'Цена заказа: {price}' 
+            order_message += f'Цена заказа: {price}'
             bot.send_message(call.message.chat.id, order_message, reply_markup=key_order)
 
         if call.data.split(';')[1] == 'next':
@@ -448,7 +449,7 @@ def query_handler(call):
 
     if call.data.split(';')[0] == 'adm':
         a = 0
-        if call.data.split(';')[1] != 'apr':
+        if call.data.split(';')[1] not in ['apr', 'ch', 'f+', 'f-', 'apply']:
             bot.delete_message(call.message.chat.id, call.message.message_id)
         if call.data.split(';')[1] == 'adm':
             a = bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
@@ -458,11 +459,56 @@ def query_handler(call):
             a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите удалить.\n Пример: "Никнейм"\n Админ:', reply_markup=admin_management(call.data.split(';')[1]))
         if call.data.split(';')[1] == 'ed':
             a = bot.send_message(call.message.chat.id, 'Введите никнейм админа, которого хотите изменить и уровень, который хотите ему присвоить.\nПример: "Никнейм" 1\n Админ и его уровень:', reply_markup=admin_management(call.data.split(';')[1]))
-        
+
         if call.data.split(';')[1] == 'db':
             a = bot.send_message(call.message.chat.id, 'Что хотите изменить?', reply_markup=keyb_db_change)
         if call.data.split(';')[1] == 'back':
-            a = bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel)
+            a = bot.send_message(chat_id=call.message.chat.id, text='Панель управления', reply_markup=keyb_panel)
+        # переход к изменению заказа аминистратором
+        if call.data.split(';')[1] == 'ch':
+            i_kb = InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('Назад', callback_data='adm;to_order'),
+                     InlineKeyboardButton('Предложить изменения', callback_data='adm;apply'),
+                     InlineKeyboardButton('Добавить товар', callback_data='adm;add_poz'))
+            bot.delete_message(chat_id=call.message.chat.id,
+                               message_id=call.message.message_id)
+            pending_orders[call.data.split(';')[2]]['admin_messages'].pop(
+                pending_orders[call.data.split(';')[2]]['admin_messages'].index(call.message.message_id)
+            )
+            c = bot.send_message(chat_id=admin_chat_id,
+                                 text='Режим изменения заказа',
+                                 reply_markup=i_kb)
+            pending_orders[call.data.split(';')[2]]['admin_messages'].append(c.message_id)
+            for key, value in pending_orders[call.data.split(';')[2]]['cart'].items():
+                pending_orders[call.data.split(';')[2]]['admin_messages'].append(
+                    bot.send_message(chat_id=admin_chat_id,
+                                     text=f'{key} x {value}',
+                                     reply_markup=gen_foods(key, admin_chat_id,
+                                                            name='adm_foods',
+                                                            state=call.data.split(';')[2]))
+                )
+        if call.data.split(';')[1] == 'f+' or 'f-':
+            sign = call.data.split(';')[1][1]
+            if sign == '+':
+                pending_orders[call.data.split(';')[2]]['cart'][call.message.text.split(' x ')[0]] += 1
+                bot.edit_message_text(chat_id=call.message.chat.id,
+                                      message_id=call.message.message_id,
+                                      text=call.message.text.split(' x ')[0] + ' x ' +
+                                      str(pending_orders[call.data.split(';')[2]]['cart'][call.message.text.split(' x ')[0]]),
+                                      reply_markup=gen_foods(call.message.text.split(' x ')[0], admin_chat_id,
+                                                             name='adm_foods',
+                                                             state=call.data.split(';')[2])
+                                      )
+            elif sign == '-' and pending_orders[call.data.split(';')[2]]['cart'][call.message.text.split(' x ')[0]] != 0:
+                pending_orders[call.data.split(';')[2]]['cart'][call.message.text.split(' x ')[0]] -= 1
+                bot.edit_message_text(chat_id=call.message.chat.id,
+                                      message_id=call.message.message_id,
+                                      text=call.message.text.split(' x ')[0] + ' x ' +
+                                      str(pending_orders[call.data.split(';')[2]]['cart'][call.message.text.split(' x ')[0]]),
+                                      reply_markup=gen_foods(call.message.text.split(' x ')[0], admin_chat_id,
+                                                             name='adm_foods',
+                                                             state=call.data.split(';')[2])
+                                      )
         # Подтверждение заказа TG
         if call.data.split(';')[1] == 'done':
             # очистить корзину и реальную корзину
@@ -474,8 +520,17 @@ def query_handler(call):
                                   message_id=pending_orders[call.data.split(';')[2]]['message_id'],
                                   text='Спасибо что выбрали нас! Будем благодарны если вы оставите отзыв',
                                   reply_markup=i_kb)
-            print(call.data.split(';')[2][2:])
-            sessions[call.data.split(';')[2][2:]] = {}
+            id = int(call.data.split(';')[2][2:])
+            sessions.pop(id)  # очистка сессии, потом перенести в кнопки отзыв и в меню после выполнения заказа
+            sessions[id] = {}
+            sessions[id]['last_foods'] = {}
+            sessions[id]['cart'] = {}
+            sessions[id]['food_list'] = []  # Удалить потом
+            sessions[id]['real_cart'] = {}
+            sessions[id]['cart_ids'] = []
+            sessions[id]['contacts'] = {}
+            sessions[id]['contacts']['phone'] = ''  # подругзить из базы
+            sessions[id]['contacts']['adress'] = ''
             pending_orders.pop(call.data.split(';')[2])
         if call.data.split(';')[1] == 'apr':
             # Добавить проверку на клиента чтобы изменить адрес и телефон в базе
@@ -490,8 +545,8 @@ def query_handler(call):
                                             time_placed,
                                             db.get_item('Admins', call.from_user.id, 'tg_id')[0][0],
                                             pending_orders[call.data.split(';')[2]]['cart'])
-            i_kb=InlineKeyboardMarkup()
-            i_kb.add(InlineKeyboardButton('С моим заказом что-то не так',callback_data='o;wrong') )
+            i_kb = InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('С моим заказом что-то не так', callback_data='o;wrong') )
             bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
                                   message_id=pending_orders[call.data.split(';')[2]]['message_id'],
                                   text='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут',
@@ -537,7 +592,7 @@ def query_handler(call):
                 elif call.data.split(';')[0] == 'edit':
                     db.update_cell('Admins', id[0][0], 'role', admin_session[call.message.chat.id]['admin_to_change'].split()[1])
                     print(db.get_item('Admins', admin_session[call.message.chat.id]['admin_to_change'].split()[0], 'name'))
-         
+
             admin_session[call.message.chat.id]['last_message'] = call.message.text
             bot.delete_message(call.message.chat.id, call.message.message_id)
             bot.send_message(call.message.chat.id, 'Управление админами', reply_markup=keyb_admin_management)
@@ -574,25 +629,25 @@ def query_handler(call):
 
     if call.data.split(';')[0] == 'dbf':
         if call.data.split(';')[1] == 'forward':
-            slider = gen_slider(int(call.data.split(';')[2])+1, name='db_change')      
-        if call.data.split(';')[1] == 'back': 
-            slider = gen_slider(int(call.data.split(';')[2])-1, name='db_change') 
+            slider = gen_slider(int(call.data.split(';')[2])+1, name='db_change')
+        if call.data.split(';')[1] == 'back':
+            slider = gen_slider(int(call.data.split(';')[2])-1, name='db_change')
 
         food_list = admin_session[call.message.chat.id]['food_list']
         last_foods = admin_session[call.message.chat.id]['last_foods']
-        
+
         if slider[1] < len(food_list) and slider[2] > 0:
-            for id in last_foods: 
+            for id in last_foods:
                 bot.delete_message(chat_id=call.message.chat.id, message_id=id)
             bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
             admin_session[call.message.chat.id]['last_foods'] = []
-            
+
             for f in list(food_list.keys())[slider[1]:slider[2]]:
                 a = bot.send_message(call.message.chat.id, f'{f}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, name='db_change'))
                 admin_session[call.message.chat.id]['last_foods'].append(a.message_id)
             bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3], name='db_change')[0])
-    
-    if call.data.split(';')[0] == 'dbn': 
+
+    if call.data.split(';')[0] == 'dbn':
         gen_menu_info = gen_menu(int(call.data.split(';')[2]), callback=('db', 'dbn'))
         if call.data.split(';')[1] == 'forward':
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Меню", reply_markup=gen_menu(gen_menu_info[1]+1, callback=('db', 'dbn'))[0])
@@ -606,8 +661,8 @@ def query_handler(call):
                 bot.delete_message(chat_id=call.message.chat.id, message_id=id)
             admin_session[call.message.chat.id]['last_foods'] = []
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-        bot.send_message(chat_id=call.message.chat.id, text = 'Панель управления', reply_markup=keyb_panel) 
-    
+        bot.send_message(chat_id=call.message.chat.id, text='Панель управления', reply_markup=keyb_panel)
+
     # if call.data == 'change;phone':
     #     keyb_phone = InlineKeyboardMarkup()
     #     keyb_phone.add(InlineKeyboardButton('Подтвердить', callback_data='done'))
@@ -616,4 +671,4 @@ def query_handler(call):
 
 print("Ready")
 
-bot.infinity_polling()    
+bot.infinity_polling()
