@@ -2,6 +2,7 @@
 import time
 
 import telebot
+import os
 from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from db_requests import db
@@ -12,6 +13,7 @@ import sys
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
 admin_chat_id = -1002019810166
 
+bot_photos = {}
 sessions = {}
 admin_session = {}
 pending_orders = {}
@@ -181,6 +183,17 @@ def gen_sesscions(chat_id):
         sessions[client_id]['contacts']['phone'] = '' #подругзить из базы
         sessions[client_id]['contacts']['adress'] = '' #подгрузить из базы
 
+def has_photo(food):
+    if food in bot_photos:
+        return bot_photos[food]
+    else:
+        if os.path.isfile(f'photos\Кока-кола 0.5л в стекле.jpg'):
+            f = open(f'photos\Кока-кола 0.5л в стекле.jpg', 'rb')
+            return f
+        else: 
+            return None
+   
+
 @bot.message_handler(content_types=['text'])
 def start(message):
     if message.chat.id != admin_chat_id and message.chat.id not in admin_session:
@@ -286,9 +299,20 @@ def query_handler(call):
         sessions[call.message.chat.id]['food_list'] = db.get_category(call.data.split(';')[1])
         slider = gen_slider(1)
         food_list = sessions[call.message.chat.id]['food_list']
-        for f in list(food_list.keys())[slider[1]:slider[2]]:
-            a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
-            sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+
+        if call.data.split(';')[1] == 'Напитки':
+            for f in list(food_list.keys())[slider[1]:slider[2]]:
+                photo = has_photo(f)
+                a = bot.send_photo(call.message.chat.id, photo, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
+                if type(photo) is not str:
+                    bot_photos[f] = a.photo[0].file_id
+                    photo.close()
+                print(bot_photos[f])
+                sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+        else:
+            for f in list(food_list.keys())[slider[1]:slider[2]]:
+                a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
+                sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
         bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
     # Callback для кнопок + и -. UPD 02:1 18.11
