@@ -162,6 +162,7 @@ def send_order(client_chat_type: str, client_chat_id: int, adress: str, tel: str
     i_kb.add(InlineKeyboardButton('Изменить заказ', callback_data=f'adm;ch;{client_chat_type}{str(client_chat_id)}'))
     a = bot.send_message(admin_chat_id, text, reply_markup=i_kb)
     pending_orders[client_chat_type+str(client_chat_id)]['admin_messages'] = [a.message_id]
+    return a
 
 def gen_sesscions(chat_id):
     client_id = db.get_client(chat_id)
