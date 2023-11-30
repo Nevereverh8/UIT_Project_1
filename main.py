@@ -3,21 +3,18 @@ from db_requests import db
 import threading
 import time
 import datetime as dt
-
 def vk():
-    # import vk
-    pass
+    import telegram_bot
 
 
 def tg():
-    # import telegram_bot
-    pass
+    import vk_bot
 
 
-# tg_thread = threading.Thread(target=tg)
-# vk_thread = threading.Thread(target=vk)
-# tg_thread.start()
-# vk_thread.start()
+tg_thread = threading.Thread(target=tg)
+vk_thread = threading.Thread(target=vk)
+tg_thread.start()
+vk_thread.start()
 
 
 # # # down here is the test area
@@ -29,7 +26,7 @@ def tg():
 #     print(con.execute('SELECT * FROM Order_lists').fetchall())
 
 
-print(f"{time.localtime().tm_mday}.{time.localtime().tm_mon}.{time.localtime().tm_year}")
+#print(f"{time.localtime().tm_mday}.{time.localtime().tm_mon}.{time.localtime().tm_year}")
 
 
 def daily_stat():
@@ -49,7 +46,7 @@ print(db.insert_order(1, '12:40', 1, {'Кока-кола 0.5л в стекле':
 print(str(time.localtime().tm_hour)+':'+str(time.localtime().tm_min))
 while True:
     schedule.run_pending()
-    time.sleep(1)
+    time.sleep(5)
 # print(get_client(123456789))
 # print(get_client(123456788))
 

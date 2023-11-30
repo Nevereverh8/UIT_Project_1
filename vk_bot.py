@@ -6,7 +6,11 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 import json
 import array
 from db_requests import db
-
+import telebot
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from telegram_bot import send_order
+bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
+admin_chat_id = -1002019810166
 GROUP_ID = '168407288'
 GROUP_TOKEN = 'vk1.a.V_3LVLsyaa3Z-x1TlEmcrWA8fHL-aHH-MM5tYAAVF9qF7wwZTreoJvg187d8PG1bXEacBFTVi9jwfU8DyS-6DMmW6uPouJzV5NJl3nUL0KY855az30d9bbF5ZcnRXvC_1gPa_ZroL5sCosDoSlNj0lRAHkZNfinTvHVVUUv7YfmCEPtE_k0A0ysrGDJ1GivmCNmUxHGODcNy-tPhcvSdNA'
 API_VERSION = '5.120'
@@ -237,6 +241,7 @@ def adder_of_dict_sections_for_user(dicty, user_id):
     dicty[user_id]['death_squad'] = []
 
 
+
 print("Ready")
 for event in longpoll.listen():
     # новые сообщения
@@ -260,6 +265,7 @@ for event in longpoll.listen():
                 # print(sessions)
     # коллбэк
     elif event.type == VkBotEventType.MESSAGE_EVENT:
+        # print(event.obj.message.conversation_message_id, 'ьйцуйцу')
         if event.object.payload.get('type') != '':
             user_id = event.object.user_id
             # создание словаря по id пользователя
@@ -323,6 +329,9 @@ for event in longpoll.listen():
             print(sessions[user_id]['temp'])
             print(sessions[user_id]['cart'])
 
+            # Отправка заказа в телегу
+            if event.object.payload.get('type') == 'send_order':  # <-суда колбек когда все кончено
+                send_order('VK', user_id, 'Кольцова 42', '+375291825903', 'message_id', sessions[user_id]['cart'])
 """
 теперь это легаси но пусть лежит наверное
 upload = vk_api.VkUpload(vk)
@@ -341,3 +350,5 @@ vk.method("messages.send", {"peer_id": id, "message": "TEST", "attachment": "pho
                         message=text_vk,
                         attachment="photos/amogus.jpg")
 """
+
+
