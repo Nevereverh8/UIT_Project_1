@@ -162,26 +162,29 @@ def send_order(client_chat_type: str, client_chat_id: int, adress: str, tel: str
     i_kb.add(InlineKeyboardButton('Изменить заказ', callback_data=f'adm;ch;{client_chat_type}{str(client_chat_id)}'))
     a = bot.send_message(admin_chat_id, text, reply_markup=i_kb)
     pending_orders[client_chat_type+str(client_chat_id)]['admin_messages'] = [a.message_id]
-    return a
+
+def gen_sesscions(chat_id):
+    client_id = db.get_client(chat_id)
+    if not client_id:
+        client_id = chat_id
+    else:
+        client_id = client_id[-1]
+    if not sessions:
+        sessions[client_id] = {}
+        sessions[client_id]['last_foods'] = {}
+        sessions[client_id]['cart'] = {}
+        sessions[client_id]['food_list'] = [] #Удалить потом
+        sessions[client_id]['real_cart'] = {}
+        sessions[client_id]['cart_ids'] = []
+        sessions[client_id]['contacts'] = {}
+        sessions[client_id]['contacts']['phone'] = '' #подругзить из базы
+        sessions[client_id]['contacts']['adress'] = '' #подгрузить из базы
 
 @bot.message_handler(content_types=['text'])
 def start(message):
     if message.chat.id != admin_chat_id and message.chat.id not in admin_session:
         if message.text == '/start':
-            client_id = db.get_client(message.chat.id)
-            if client_id:
-                client_id =db.get_client(message.chat.id)[-1]
-            if not client_id:
-                client_id = message.chat.id
-            sessions[client_id] = {}
-            sessions[client_id]['last_foods'] = {}
-            sessions[client_id]['cart'] = {}
-            sessions[client_id]['food_list'] = [] #Удалить потом
-            sessions[client_id]['real_cart'] = {}
-            sessions[client_id]['cart_ids'] = []
-            sessions[client_id]['contacts'] = {}
-            sessions[client_id]['contacts']['phone'] = '' #подругзить из базы
-            sessions[client_id]['contacts']['adress'] = '' #подгрузить из базы
+            gen_sesscions(chat_id=message.chat.id)
             a = bot.send_message(message.chat.id, """Приветсвуем в ресторане UIT.\nУютная, доброжелательная атмосфера и достойный сервис  - это основные преимущества ресторана. Все вышеперечисленное и плюс доступный уровень цен позволили заведению оказаться в списке лучших ресторанов Минска xd.""", reply_markup=keyb_menu)
             sessions[message.chat.id]['last_message_menu'] = a.message_id
         elif message.text == '/menu':
@@ -236,11 +239,13 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
+    gen_sesscions(call.message.chat.id)
     #print(call.from_user.username)
     bot.answer_callback_query(callback_query_id=call.id)
     print(call.data)
     # who pressed button = call.from_user['id']
     sys.stdout.flush()
+
     if call.data.split(';')[0] == 'm':
         # Удаляет сообщения возвращая пользователя в меню
         # Delete message returning the user to menu
@@ -318,20 +323,20 @@ def query_handler(call):
             slider = gen_slider(int(call.data.split(';')[2])+1)
         elif call.data.split(';')[1] == 'back':
             slider = gen_slider(int(call.data.split(';')[2])-1)
+
         food_list = sessions[call.message.chat.id]['food_list']
         last_foods = sessions[call.message.chat.id]['last_foods']
+        
+        if slider[1] < len(food_list) and slider[2] > 0:
+            for id in last_foods:
+                bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            sessions[call.message.chat.id]['last_foods'] = {}
 
-        for id in last_foods:
-            print(sessions[call.message.chat.id]['last_foods'], id)
-            sys.stdout.flush()
-            bot.delete_message(chat_id=call.message.chat.id, message_id=id)
-        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-        sessions[call.message.chat.id]['last_foods'] = {}
-
-        for f in list(food_list.keys())[slider[1]:slider[2]]:
-            a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id))
-            sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
-        bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3])[0])
+            for f in list(food_list.keys())[slider[1]:slider[2]]:
+                a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id))
+                sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+            bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3])[0])
 
     # Добавление позиций в корзину    
     # Adding dishes in cart
@@ -394,16 +399,17 @@ def query_handler(call):
         elif call.data.split(';')[1] == 'back':
             slider = gen_slider(int(call.data.split(';')[2])-1, name='cart', cal=call.message.chat.id)
 
-        for id in sessions[call.message.chat.id]['cart_ids'][1:]:
-            bot.delete_message(chat_id=call.message.chat.id, message_id=id)
-        bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-        sessions[call.message.chat.id]['cart_ids'] = [sessions[call.message.chat.id]['cart_ids'][0]]
+        if slider[1] < len(sessions[call.message.chat.id]['cart_ids'][1:]) and slider[2] > 0:
+            for id in sessions[call.message.chat.id]['cart_ids'][1:]:
+                bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+            sessions[call.message.chat.id]['cart_ids'] = [sessions[call.message.chat.id]['cart_ids'][0]]
 
-        for item in list(cart_items.keys())[slider[1]:slider[2]]:
-            a = bot.send_message(call.message.chat.id, item, reply_markup=gen_foods(item, call.message.chat.id, name='cart', temp=cart_items[item]))
-            sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
-        a = bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
-        sessions[call.message.chat.id]['cart_navigation'] = a.message_id
+            for item in list(cart_items.keys())[slider[1]:slider[2]]:
+                a = bot.send_message(call.message.chat.id, item, reply_markup=gen_foods(item, call.message.chat.id, name='cart', temp=cart_items[item]))
+                sessions[call.message.chat.id]['cart_ids'].append(a.message_id)
+            a = bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
+            sessions[call.message.chat.id]['cart_navigation'] = a.message_id
     # Изменение кол-ва позиций в корзине
     # Edding amount of dishes in cart
     if call.data.split(';')[0] == 'crta':
