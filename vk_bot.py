@@ -83,10 +83,8 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, use
         # change here
         death_id = send_message_event(listy[x], key_gen_pos(listy[x], user_id))
         print(death_id)
+        # death is only the beginning
         sessions[user_id]['death_squad'].append(death_id)
-        # vkinl.add_callback_button(label=listy[x], color=VkKeyboardColor.SECONDARY,
-        #                           payload={"type": flag2 + ' ;' + listy[x] + '; ' + str(x)})
-        # vkinl.add_line()
     if num == 0 and end_ != len(dicty):
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
@@ -113,24 +111,44 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, use
     print(vkinl.keyboard)
     return vkinl
 
-
-def key_gen_pos(pos_name, user_id):
+# double call if u want to change amount(кол-во)
+def key_gen_pos(pos_name, user_id, change=0):
+    cart_text = "Добавить в корзину"
+    # стартовая проверка на существование в словарике
     if pos_name not in sessions[user_id]['temp']:
         sessions[user_id]['temp'][pos_name] = 0
         but_text = "Кол-во: 0"
     else:
         but_text = f"Кол-во: {sessions[user_id]['temp'][pos_name]}"
+    # работа с temp при нажатии на "+" и "-"
+    if change:
+        result = sessions[user_id]['temp'][pos_name] + change
+        if result >= 0:
+            sessions[user_id]['temp'][pos_name] = result
+    # изменение текста кнопки при изменении количества позиций после того как данные есть в корзине
+    if pos_name in sessions[user_id]['cart']:
+        if sessions[user_id]['temp'][pos_name] == sessions[user_id]['cart'][pos_name] and sessions[user_id]['cart'][pos_name] != 0:
+            cart_text = 'Уже в корзине'
+        elif sessions[user_id]['temp'][pos_name] != sessions[user_id]['cart'][pos_name] and sessions[user_id]['cart'][pos_name] != 0:
+            cart_text = 'Изменить кол-во'
+        else:
+            cart_text = "Добавить в корзину"
     vkinl = VkKeyboard(**settings2)
     vkinl.add_callback_button(label="-", color=VkKeyboardColor.PRIMARY,
-                              payload={"type": 'text'})
+                              payload={"type": 'item' + ' ;' + pos_name + '; ' + str(-1)})
     vkinl.add_callback_button(label=but_text, color=VkKeyboardColor.PRIMARY,
                               payload={"type": ''})
     vkinl.add_callback_button(label="+", color=VkKeyboardColor.PRIMARY,
-                              payload={"type": 'text'})
+                              payload={"type": 'item' + ' ;' + pos_name + '; ' + str(1)})
     vkinl.add_line()
-    vkinl.add_callback_button(label="Добавить в корзину", color=VkKeyboardColor.PRIMARY,
-                              payload={"type": 'text'})
+    vkinl.add_callback_button(label=cart_text, color=VkKeyboardColor.PRIMARY,
+                              payload={"type": 'cart' + ' ;' + pos_name + '; ' + str(0)})
     return vkinl
+
+def pos_temp_handler(pos_name, user_id):
+    sessions[user_id]['cart'][pos_name] = sessions[user_id]['temp'][pos_name]
+    keyb = key_gen_pos(pos_name, user_id)
+    return keyb
 
 def message_delete(listy, new=True):
     if new:
@@ -215,6 +233,7 @@ def send_message_new(message, keyboard=None):
 
 def adder_of_dict_sections_for_user(dicty, user_id):
     dicty[user_id]['temp'] = {}
+    dicty[user_id]['cart'] = {}
     dicty[user_id]['death_squad'] = []
 
 
@@ -242,6 +261,7 @@ for event in longpoll.listen():
     # коллбэк
     elif event.type == VkBotEventType.MESSAGE_EVENT:
         if event.object.payload.get('type') != '':
+            user_id = event.object.user_id
             # создание словаря по id пользователя
             if event.object.user_id not in sessions:
                 sessions[event.object.user_id] = {}
@@ -287,11 +307,21 @@ for event in longpoll.listen():
                 keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item',
                                    dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
                 last_id = edit_message('Навигация', keyb)
-            print(event)
-            # elif flag == 'item':
-            #     last_id = message_edit(f"{' '.join(sec_dicty[event.object.payload.get('type').split(';')[1]])}",
-            #                            keyboard_quit)
-            # print(sessions)
+            elif flag == 'item':
+                name = event.object.payload.get('type').split(';')[1]
+                print(name, user_id, int(data))
+                keyb = key_gen_pos(name, user_id, int(data))
+                keyb = key_gen_pos(name, user_id)
+                last_id = edit_message(name, keyb)
+            elif flag == 'cart':
+                name = event.object.payload.get('type').split(';')[1]
+                keyb = pos_temp_handler(name, user_id)
+                keyb = key_gen_pos(name, user_id)
+                last_id = edit_message(name, keyb)
+                pass
+            # print(event)
+            print(sessions[user_id]['temp'])
+            print(sessions[user_id]['cart'])
 
 """
 теперь это легаси но пусть лежит наверное
