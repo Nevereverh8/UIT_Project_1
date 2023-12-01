@@ -194,6 +194,7 @@ def pos_temp_handler(pos_name, user_id):
     return keyb
 
 def message_delete(listy, new=True):
+    print(listy, "listy")
     if new:
         vk.messages.delete(peer_id=event.obj.message['from_id'],
                            message_ids=listy,
@@ -322,14 +323,17 @@ for event in longpoll.listen():
                     sessions[user_id] = {}
                     adder_of_dict_sections_for_user(sessions, user_id)
                 if event.obj.message['text'] == 'Запустить бота!' or event.obj.message['text'] == "Меню!":
+                    if sessions[user_id]['edit_leader']:
+                        message_delete([sessions[user_id]['edit_leader']])
+                    if sessions[user_id]['death_squad']:
+                        print(sessions[user_id]['death_squad'], 'death_squad')
+                        message_delete(sessions[user_id]['death_squad'])
+                        sessions[user_id]['death_squad'] = []
                     keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
                     last_id = send_message_new('Выбирай категорию', keyb)
                     sessions[user_id]['edit_leader'] = last_id
                 elif event.obj.message['text'] in HI:
                     send_message_new(text_vk, keyboard_1)
-                elif event.obj.message['text'] == 't':
-                    message_delete(sessions[event.obj.message['from_id']]['death_squad'])
-                    sessions[event.obj.message['from_id']]['death_squad'] = []
                 # print(sessions)
     # коллбэк
     elif event.type == VkBotEventType.MESSAGE_EVENT:
@@ -384,7 +388,9 @@ for event in longpoll.listen():
                 # send_order('VK', user_id, 'Кольцова 42', '+375291825903', 'message_id', sessions[user_id]['cart'])
             elif flag == 'inter':
                 print(sessions[user_id]['edit_leader'], 'edit_leader')
-                message_delete(sessions[user_id]['death_squad'], new=False)
+                if sessions[user_id]['death_squad']:
+                    message_delete(sessions[user_id]['death_squad'], new=False)
+                    sessions[user_id]['death_squad'] = []
                 if sessions[user_id]['edit_leader']:
                     # FFS FFS FFS LEON Halp
                     edit_message_new('*', sessions[user_id]['edit_leader'], peer=user_id)
