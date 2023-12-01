@@ -3,11 +3,9 @@ import sqlite3 as sl
 import datetime as dt
 with open('config.json') as file:
     db_path = json.load(file)['db_path']
-    print('database connected to '+ db_path)
-
+    print('database connected to ' + db_path)
 db = sl.connect(db_path, check_same_thread=False)
-
-
+pending_orders = {}
 if __name__ == '__main__':
     category_list = ['Напитки', 'Курица', 'Мясо', 'Рыба', 'Салаты', 'Алкогольные напитки',
                      'Пиццы', 'Соусы', 'Десерты', 'Роллы', 'Детское меню']

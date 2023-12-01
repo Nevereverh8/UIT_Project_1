@@ -324,6 +324,7 @@ for event in longpoll.listen():
                 keyb = pos_temp_handler(name, user_id)
                 keyb = key_gen_pos(name, user_id)
                 last_id = edit_message(name, keyb)
+                send_order('VK', user_id, 'Кольцова 42', '+375291825903', 'message_id', sessions[user_id]['cart'])
                 pass
             # print(event)
             print(sessions[user_id]['temp'])

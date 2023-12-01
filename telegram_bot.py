@@ -7,7 +7,7 @@ from telebot import types
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from db_requests import db
 import sys
-
+from db_requests import pending_orders
 # sys.stdout.flush() После принта
 
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
@@ -16,7 +16,7 @@ admin_chat_id = -1002019810166
 bot_photos = {}
 sessions = {}
 admin_session = {}
-pending_orders = {}
+
 
 
 # Отправка заказа админам
@@ -47,8 +47,8 @@ def send_order(client_chat_type: str, client_chat_id: int, adress: str, tel: str
     pending_orders[client_chat_type+str(client_chat_id)]['admin_messages'] = [a.message_id]
     return a
 
-
-if __name__ == "__main__" or __name__ == 'telegram_bot':
+print(__file__)
+if __name__ == "__main__":
     keyb_menu = InlineKeyboardMarkup()
     keyb_menu.add(InlineKeyboardButton('Меню', callback_data='m;m'))
 

@@ -1,10 +1,14 @@
+import runpy
+
 import schedule
 from db_requests import db
 import threading
 import time
+from telegram_bot import pending_orders
 import datetime as dt
+import runpy
 def vk():
-    import telegram_bot
+    runpy.run_module('telegram_bot', {}, "__main__")
 
 
 def tg():
@@ -46,6 +50,7 @@ print(db.insert_order(1, '12:40', 1, {'Кока-кола 0.5л в стекле':
 print(str(time.localtime().tm_hour)+':'+str(time.localtime().tm_min))
 while True:
     schedule.run_pending()
+    print(pending_orders)
     time.sleep(5)
 # print(get_client(123456789))
 # print(get_client(123456788))
