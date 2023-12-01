@@ -82,11 +82,11 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
     else:
         end_ = len(dicty)
     listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
-    print(listy)
+    # print(listy)
     for x in range(num * fix_poz, end_):
         # change here
         death_id = send_message_event(listy[x], key_gen_pos(listy[x], user_id))
-        print(death_id)
+        # print(death_id)
         # death is only the beginning
         sessions[user_id]['death_squad'].append(death_id)
     if num == 0 and end_ != len(dicty):
@@ -112,7 +112,7 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
     else:
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
         vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
-    print(vkinl.keyboard)
+    # print(vkinl.keyboard)
     return vkinl
 
 def key_gen_cart(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
@@ -122,7 +122,7 @@ def key_gen_cart(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None)
     else:
         end_ = len(dicty)
     listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
-    print(listy)
+    # print(listy)
     for x in range(num * fix_poz, end_):
         death_id = send_message_event(listy[x], key_gen_pos(listy[x], user_id))
         # death is only the beginning
@@ -150,7 +150,7 @@ def key_gen_cart(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None)
     else:
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
         # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
-    print(vkinl.keyboard)
+    # print(vkinl.keyboard)
     return vkinl
 
 
@@ -226,20 +226,21 @@ def order_interbellum(iser_id):
 
 
 # different send and editing mess func
-def edit_message_new(message, mes_id, keyboard=None):
-    # print(keyboard.keyboard)
-    # for i in keyboard.keyboard['buttons']:
-    #     print(i)
-    print(message, mes_id)
+def edit_message_new(message, mes_id, keyboard=None, peer=None):
+    # print(message, mes_id)
+    if peer:
+        id_of_peer = peer
+    else:
+        id_of_peer = event.obj.message['from_id']
     if keyboard:
         vk.messages.edit(
-            peer_id=event.obj.message['from_id'],
+            peer_id=id_of_peer,
             message_id=mes_id,
             message=message,
             keyboard=keyboard.get_keyboard())
     else:
         vk.messages.edit(
-            peer_id=event.obj.message['from_id'],
+            peer_id=id_of_peer,
             message_id=mes_id,
             message=message)
 
@@ -254,17 +255,17 @@ def edit_message(message, keyboard=None, mes_id=None):
     else:
         id_ = event.obj.conversation_message_id
     if keyboard:
-        mes_id = vk.messages.edit(
+        internal_id = vk.messages.edit(
             peer_id=event.obj.peer_id,
             message=message,
             conversation_message_id=id_,
             keyboard=keyboard.get_keyboard())
     else:
-        mes_id = vk.messages.edit(
+        internal_id = vk.messages.edit(
             peer_id=event.obj.peer_id,
             message=message,
             conversation_message_id=id_)
-    return mes_id
+    return internal_id
 
 
 def send_message_event(message, keyboard=None):
@@ -315,18 +316,18 @@ for event in longpoll.listen():
     if event.type == VkBotEventType.MESSAGE_NEW:
         if event.obj.message['text'] != '':
             if event.from_user:
+                user_id = event.obj.message['from_id']
                 # создание словаря по id пользователя
-                if event.obj.message['from_id'] not in sessions:
-                    sessions[event.obj.message['from_id']] = {}
-                    adder_of_dict_sections_for_user(sessions, event.obj.message['from_id'])
-                print(event)
+                if user_id not in sessions:
+                    sessions[user_id] = {}
+                    adder_of_dict_sections_for_user(sessions, user_id)
                 if event.obj.message['text'] == 'Запустить бота!' or event.obj.message['text'] == "Меню!":
                     keyb = key_gen(db.get_categories(), 0, flag='c', flag2='cat')
-                    send_message_new('Выбирай категорию', keyb)
+                    last_id = send_message_new('Выбирай категорию', keyb)
+                    sessions[user_id]['edit_leader'] = last_id
                 elif event.obj.message['text'] in HI:
                     send_message_new(text_vk, keyboard_1)
                 elif event.obj.message['text'] == 't':
-                    # print(sessions[event.obj.message['from_id']]['death_squad'])
                     message_delete(sessions[event.obj.message['from_id']]['death_squad'])
                     sessions[event.obj.message['from_id']]['death_squad'] = []
                 # print(sessions)
@@ -338,15 +339,10 @@ for event in longpoll.listen():
             if event.object.user_id not in sessions:
                 sessions[event.object.user_id] = {}
                 adder_of_dict_sections_for_user(sessions, event.object.user_id)
-            # print(event.object.payload.get('type'))
-            # print(event.object)
-            # print(event.object.user_id, 'event.object.user_id')
             flag = event.object.payload.get('type').split()[0]
             data = event.object.payload.get('type').split()[-1]
             # print(flag, data)
-            # print(event.object)
             if event.object.payload.get('type') == 'open_link':
-                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 vk.messages.sendMessageEventAnswer(
                     event_id=event.object.event_id,
                     user_id=event.object.user_id,
@@ -356,11 +352,8 @@ for event in longpoll.listen():
             elif flag == 'c':
                 keyb = key_gen(db.get_categories(), int(data), flag='c', flag2='cat')
                 last_id = edit_message('Выбирай категорию', keyb)
-            # fine for now
             elif flag == 'cat':
-                # print(event.object.payload.get('type').split(';')[1])
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
-                # print(dicty_of_item, "dicty_of_item")
                 keyb = key_gen_cat(dicty_of_item, 0, flag='i',
                                    dicty_name=event.object.payload.get('type').split(';')[1],
                                    user_id=event.object.user_id)
@@ -369,9 +362,6 @@ for event in longpoll.listen():
                 else:
                     last_id = edit_message('Навигация', keyb)
             elif flag == 'i':
-                # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
-                # print(event.object.payload.get('type'))
-                # FIXed mostly
                 if sessions[event.object.user_id]['death_squad']:
                     message_delete(sessions[event.object.user_id]['death_squad'], new=False)
                     sessions[event.object.user_id]['death_squad'] = []
@@ -379,11 +369,10 @@ for event in longpoll.listen():
                 keyb = key_gen_cat(dicty_of_item, int(data), flag='i',
                                    dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
                 last_id = edit_message('Навигация', keyb)
-                sessions[user_id]['edit_leader'] = last_id
 
             elif flag == 'item':
                 name = event.object.payload.get('type').split(';')[1]
-                print(name, user_id, int(data))
+                # print(name, user_id, int(data))
                 keyb = key_gen_pos(name, user_id, int(data))
                 keyb = key_gen_pos(name, user_id)
                 last_id = edit_message(name, keyb)
@@ -394,22 +383,24 @@ for event in longpoll.listen():
                 last_id = edit_message(name, keyb)
                 # send_order('VK', user_id, 'Кольцова 42', '+375291825903', 'message_id', sessions[user_id]['cart'])
             elif flag == 'inter':
-                mess, keyb = order_interbellum(user_id)
-                # message_delete(sessions[user_id]['death_squad'], new=False)
-                # message_delete(sessions[user_id]['death_leader'], new=False)
-                last_id = send_message_event(mess, keyb)
-                if sessions[user_id]['edit_leader']:
-                    edit_message('*', mes_id=sessions[user_id]['edit_leader'])
-                    sessions[user_id]['edit_leader'] = 0
+                print(sessions[user_id]['edit_leader'], 'edit_leader')
                 message_delete(sessions[user_id]['death_squad'], new=False)
+                if sessions[user_id]['edit_leader']:
+                    # FFS FFS FFS LEON Halp
+                    edit_message_new('*', sessions[user_id]['edit_leader'], peer=user_id)
+                    # edit_message('*', mes_id=sessions[user_id]['edit_leader'])
+                    sessions[user_id]['edit_leader'] = 0
+                mess, keyb = order_interbellum(user_id)
+                last_id = send_message_event(mess, keyb)
                 sessions[user_id]['death_leader'] = [last_id]
             elif flag == 'change':
                 if sessions[user_id]['death_leader']:
                     message_delete(sessions[user_id]['death_leader'], new=False)
 
             # print(event)
-            print(sessions[user_id]['temp'])
-            print(sessions[user_id]['cart'])
+            # print(sessions[user_id]['temp'])
+            # print(sessions[user_id]['cart'])
+            print(sessions[user_id]['edit_leader'], 'edit_leader2')
 
             # Отправка заказа в телегу
             if event.object.payload.get('type') == 'send_order':  # <-суда колбек когда все кончено
@@ -432,5 +423,6 @@ vk.method("messages.send", {"peer_id": id, "message": "TEST", "attachment": "pho
                         message=text_vk,
                         attachment="photos/amogus.jpg")
 """
-
+# message_delete(sessions[user_id]['death_squad'], new=False)
+# message_delete(sessions[user_id]['death_leader'], new=False)
 
