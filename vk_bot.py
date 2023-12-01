@@ -75,7 +75,7 @@ def key_gen(list_, num, fix_poz=5, flag="x", flag2="f"):
 
 # a lil bit sure what 2 do
 # записи сделать - Notion?
-def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, user_id=None):
+def key_gen_cat(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
     vkinl = VkKeyboard(**settings2)
     if ((num + 1) * fix_poz) < len(dicty):
         end_ = ((num + 1) * fix_poz)
@@ -114,6 +114,45 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", flag2="f", dicty_name=None, use
         vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     print(vkinl.keyboard)
     return vkinl
+
+def key_gen_cart(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
+    vkinl = VkKeyboard(**settings2)
+    if ((num + 1) * fix_poz) < len(dicty):
+        end_ = ((num + 1) * fix_poz)
+    else:
+        end_ = len(dicty)
+    listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
+    print(listy)
+    for x in range(num * fix_poz, end_):
+        death_id = send_message_event(listy[x], key_gen_pos(listy[x], user_id))
+        # death is only the beginning
+        sessions[user_id]['death_squad'].append(death_id)
+    if num == 0 and end_ != len(dicty):
+        vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    elif num != 0 and end_ == len(dicty):
+        vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    elif num != 0:
+        vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
+        vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    else:
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    print(vkinl.keyboard)
+    return vkinl
+
 
 # double call if u want to change amount(кол-во)
 def key_gen_pos(pos_name, user_id, change=0):
@@ -176,7 +215,7 @@ def order_interbellum(iser_id):
                 total_price += price*value
         order_message += f"""Цена заказа {total_price} руб\n"""
         vkinl.add_callback_button(label="Изменить заказ", color=VkKeyboardColor.PRIMARY,
-                                  payload={"type": ''})
+                                  payload={"type": 'change' + ' ;''; ' + str(0)})
         vkinl.add_callback_button(label="Продолжить", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": ''})
     else:
@@ -206,21 +245,25 @@ def edit_message_new(message, mes_id, keyboard=None):
 
 
 # this func only for event get fucked new message cuz vkapi
-def edit_message(message, keyboard=None):
+def edit_message(message, keyboard=None, mes_id=None):
     # print(keyboard.keyboard)
     # for i in keyboard.keyboard['buttons']:
     #     print(i)
+    if mes_id:
+        id_ = mes_id
+    else:
+        id_ = event.obj.conversation_message_id
     if keyboard:
         mes_id = vk.messages.edit(
             peer_id=event.obj.peer_id,
             message=message,
-            conversation_message_id=event.obj.conversation_message_id,
+            conversation_message_id=id_,
             keyboard=keyboard.get_keyboard())
     else:
         mes_id = vk.messages.edit(
             peer_id=event.obj.peer_id,
             message=message,
-            conversation_message_id=event.obj.conversation_message_id)
+            conversation_message_id=id_)
     return mes_id
 
 
@@ -262,6 +305,7 @@ def adder_of_dict_sections_for_user(dicty, user_id):
     dicty[user_id]['cart'] = {}
     dicty[user_id]['death_squad'] = []
     dicty[user_id]['death_leader'] = []
+    dicty[user_id]['edit_leader'] = 0
     dicty[user_id]['contacts'] = {}
 
 
@@ -317,15 +361,13 @@ for event in longpoll.listen():
                 # print(event.object.payload.get('type').split(';')[1])
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
                 # print(dicty_of_item, "dicty_of_item")
-                keyb = key_gen_cat(dicty_of_item, 0, flag='i', flag2='item',
+                keyb = key_gen_cat(dicty_of_item, 0, flag='i',
                                    dicty_name=event.object.payload.get('type').split(';')[1],
                                    user_id=event.object.user_id)
                 if not dicty_of_item:
                     last_id = edit_message('В данной категории на данный момент нет товаров', keyb)
-                    sessions[event.object.user_id]['death_leader'] = [last_id]
                 else:
                     last_id = edit_message('Навигация', keyb)
-                    sessions[event.object.user_id]['death_leader'] = [last_id]
             elif flag == 'i':
                 # print(event.obj.conversation_message_id, "event.obj.conversation_message_id")
                 # print(event.object.payload.get('type'))
@@ -334,10 +376,11 @@ for event in longpoll.listen():
                     message_delete(sessions[event.object.user_id]['death_squad'], new=False)
                     sessions[event.object.user_id]['death_squad'] = []
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
-                keyb = key_gen_cat(dicty_of_item, int(data), flag='i', flag2='item',
+                keyb = key_gen_cat(dicty_of_item, int(data), flag='i',
                                    dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
                 last_id = edit_message('Навигация', keyb)
-                sessions[user_id]['death_leader'] = [last_id]
+                sessions[user_id]['edit_leader'] = last_id
+
             elif flag == 'item':
                 name = event.object.payload.get('type').split(';')[1]
                 print(name, user_id, int(data))
@@ -355,6 +398,15 @@ for event in longpoll.listen():
                 # message_delete(sessions[user_id]['death_squad'], new=False)
                 # message_delete(sessions[user_id]['death_leader'], new=False)
                 last_id = send_message_event(mess, keyb)
+                if sessions[user_id]['edit_leader']:
+                    edit_message('*', mes_id=sessions[user_id]['edit_leader'])
+                    sessions[user_id]['edit_leader'] = 0
+                message_delete(sessions[user_id]['death_squad'], new=False)
+                sessions[user_id]['death_leader'] = [last_id]
+            elif flag == 'change':
+                if sessions[user_id]['death_leader']:
+                    message_delete(sessions[user_id]['death_leader'], new=False)
+
             # print(event)
             print(sessions[user_id]['temp'])
             print(sessions[user_id]['cart'])
