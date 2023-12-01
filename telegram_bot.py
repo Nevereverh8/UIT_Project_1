@@ -9,7 +9,6 @@ from db_requests import db
 import sys
 from db_requests import pending_orders
 # sys.stdout.flush() После принта
-
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
 admin_chat_id = -1002019810166
 
@@ -148,7 +147,7 @@ if __name__ == "__main__":
 
     # Отдельный слайдер для блюд в категории
     # Unique slider for dishes in categories
-    def gen_slider(page, fix_pos=2, name = 'foods', cal = any):
+    def gen_slider(page, fix_pos=2, name='foods', cal=any):
         start = fix_pos*(page-1)
         end = start + fix_pos
         if name == 'foods':
@@ -296,27 +295,39 @@ if __name__ == "__main__":
         # Позиции в категории
         # Food in category
         if call.data.split(';')[0] == 'c':
-            bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
-            for id in sessions[call.message.chat.id]['last_foods']:
-                bot.delete_message(chat_id=call.message.chat.id, message_id=id)
-            sessions[call.message.chat.id]['food_list'] = db.get_category(call.data.split(';')[1])
-            slider = gen_slider(1)
-            food_list = sessions[call.message.chat.id]['food_list']
-
-            if call.data.split(';')[1] == 'Напитки':
-                for f in list(food_list.keys())[slider[1]:slider[2]]:
-                    photo = has_photo(f)
-                    a = bot.send_photo(call.message.chat.id, photo, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
-                    if type(photo) is not str:
-                        bot_photos[f] = a.photo[0].file_id
-                        photo.close()
-                    print(bot_photos[f])
-                    sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+            if call.message.chat.id == admin_chat_id:
+                pass
+                # print(pending_orders[call.data.split(';')[1]]['admin_messages'])
+                # for id in pending_orders[call.data.split(';')[1]]['admin_messages']:
+                #     pending_orders[call.data.split(';')[1]]['admin_messages'].pop(pending_orders[call.data.split(';')[1]]['admin_messages'].index(id))
+                # food_list = db.get_category(call.data.split(';')[2])
+                # slider = gen_slider(1)
+                # for f in list(food_list.keys())[slider[1]:slider[2]]:
+                #     a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.data.split(';')[1] , 0))
+                #     sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+                # bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
             else:
-                for f in list(food_list.keys())[slider[1]:slider[2]]:
-                    a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
-                    sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
-            bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
+                bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
+                for id in sessions[call.message.chat.id]['last_foods']:
+                    bot.delete_message(chat_id=call.message.chat.id, message_id=id)
+                sessions[call.message.chat.id]['food_list'] = db.get_category(call.data.split(';')[1])
+                slider = gen_slider(1)
+                food_list = sessions[call.message.chat.id]['food_list']
+
+                if call.data.split(';')[1] == 'Напитки':
+                    for f in list(food_list.keys())[slider[1]:slider[2]]:
+                        photo = has_photo(f)
+                        a = bot.send_photo(call.message.chat.id, photo, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
+                        if type(photo) is not str:
+                            bot_photos[f] = a.photo[0].file_id
+                            photo.close()
+                        print(bot_photos[f])
+                        sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+                else:
+                    for f in list(food_list.keys())[slider[1]:slider[2]]:
+                        a = bot.send_message(call.message.chat.id, f'{f} цена за шт. - {food_list[f]}', reply_markup=gen_foods((f, food_list[f]), call.message.chat.id, 0))
+                        sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
+                bot.send_message(call.message.chat.id, 'Навигация', reply_markup=slider[0])
 
         # Callback для кнопок + и -. UPD 02:1 18.11
         # Callback buttons + and -, I tend to think that it is bad code
@@ -464,8 +475,8 @@ if __name__ == "__main__":
             print(db.get_item('Food', 'Кока-кола 0.5л в стекле', 'name'))
 
             for item in sessions[call.message.chat.id]['real_cart']:
-                    order_message += item + ', ' + str(sessions[call.message.chat.id]['real_cart'][item]) + ' шт. : ' + str(sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2])+' руб' + '\n'
-                    price += sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2]
+                order_message += item + ', ' + str(sessions[call.message.chat.id]['real_cart'][item]) + ' шт. : ' + str(sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2])+' руб' + '\n'
+                price += sessions[call.message.chat.id]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2]
             if call.data.split(';')[1] == 'o':
                 for id in sessions[call.message.chat.id]['cart_ids']:
                     bot.delete_message(chat_id=call.message.chat.id, message_id=id)
@@ -513,8 +524,8 @@ if __name__ == "__main__":
             if call.data.split(';')[1] == 'ch':
                 i_kb = InlineKeyboardMarkup()
                 i_kb.add(InlineKeyboardButton('Назад', callback_data=f"adm;to_order;{call.data.split(';')[2]}"),
-                         InlineKeyboardButton('Предложить изменения', callback_data=f"adm;apply;{call.data.split(';')[2]}"),
-                         InlineKeyboardButton('Добавить товар', callback_data=f"adm;add_poz;{call.data.split(';')[2]}"))
+                         InlineKeyboardButton('Предложить изменения', callback_data=f"adm;apply;{call.data.split(';')[2]}"))
+                         # InlineKeyboardButton('Добавить товар', callback_data=f"adm;add_poz;{call.data.split(';')[2]}"))
                 bot.delete_message(chat_id=call.message.chat.id,
                                    message_id=call.message.message_id)
                 pending_orders[call.data.split(';')[2]]['admin_messages'].pop(
@@ -532,6 +543,13 @@ if __name__ == "__main__":
                                                                 name='adm_foods',
                                                                 state=call.data.split(';')[2])).message_id
                     )
+            # Админ добавляет позицию
+            if call.data.split(';')[1] == 'add_poz':
+                a = bot.send_message(admin_chat_id,
+                                     "Меню",
+                                     reply_markup=gen_menu(1, callback=(f"c;{call.data.split(';')[2]}",'cn'))[0])
+                pending_orders[call.data.split(';')[2]]['admin_messages'].append(a.message_id)
+                # pending_orders[call.data.split(';')[2]] VK123123123
             if call.data.split(';')[1] == 'f+' or 'f-':
                 sign = call.data.split(';')[1][1]
                 if sign == '+':
@@ -663,7 +681,7 @@ if __name__ == "__main__":
                                       text='Вы некорректно заполнили ваши данные, пожалуйста, заполните данные для оформления заказа ещё раз',
                                       reply_markup=i_kb
                                       )
-            if a and call.data.split(';')[1] not in ['apr', 'f+', 'f-', 'apply']:
+            if a and call.data.split(';')[1] not in ['apr', 'f+', 'f-', 'apply', 'add_poz']:
                 admin_session[call.message.chat.id]['action_id'] = [a.message_id, call.data.split(';')[1]]
                 admin_session[call.message.chat.id]['last_message'] = a.text
 
@@ -688,6 +706,8 @@ if __name__ == "__main__":
             if 'TG'+str(call.message.chat.id) in pending_orders:
                 for i in pending_orders['TG'+str(call.message.chat.id)]['admin_messages']:
                     bot.delete_message(admin_chat_id,i)
+                    pending_orders['TG' + str(call.message.chat.id)]['admin_messages']\
+                        .pop(pending_orders['TG' + str(call.message.chat.id)]['admin_messages'].index(i))
             text = 'Ваш заказ ожидает подтверждения \n\n'
             total_sum = 0
             food_list = ''
