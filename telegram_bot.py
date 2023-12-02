@@ -754,12 +754,12 @@ if __name__ == "__main__":
                                      message_id=int(pending_orders[call.data.split(';')[2]]['message_id']),
                                      message='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут')
 
-            i_kb = InlineKeyboardMarkup()
-            i_kb.add(InlineKeyboardButton('Заказ выполнен', callback_data='adm;done;' + call.data.split(';')[2]))
-            bot.edit_message_text(chat_id=call.message.chat.id,
-                                  message_id=call.message.message_id,
-                                  text=call.message.text,
-                                  reply_markup=i_kb)
+                i_kb = InlineKeyboardMarkup()
+                i_kb.add(InlineKeyboardButton('Заказ выполнен', callback_data='adm;done;' + call.data.split(';')[2]))
+                bot.edit_message_text(chat_id=call.message.chat.id,
+                                      message_id=call.message.message_id,
+                                      text=call.message.text,
+                                      reply_markup=i_kb)
             # Отклонение заказа TG
             if call.data.split(';')[1] == 'deca':
                 i_kb = InlineKeyboardMarkup()
