@@ -79,6 +79,7 @@ if __name__ == '__main__':
         sql_insert = '''INSERT INTO Admins (name, role, tg_id) VALUES (?,?,?)'''
         con.execute(sql_insert, ["Юра", 2, 413844851])
         con.execute(sql_insert, ["Костя", 2, 821927308])
+        con.execute(sql_insert, ["Андрей", 2, 1860042955])
 
         # Clients
         con.execute('''

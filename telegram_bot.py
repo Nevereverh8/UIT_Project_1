@@ -719,6 +719,7 @@ if __name__ == "__main__":
                 client = db.get_client(int(call.data.split(';')[2][2:]))
                 print(client)
                 if client:
+                    # client = client[0]
                     db.update_cell("Clients", client[0], 'tel', pending_orders[call.data.split(';')[2]]['tel'])
                     db.update_cell("Clients", client[0], 'adress', pending_orders[call.data.split(';')[2]]['contact_message'])
                 else:
