@@ -484,7 +484,7 @@ if __name__ == "__main__":
             elif call.data.split(';')[1] == 'back':
                 slider = gen_slider(int(call.data.split(';')[2])-1, name='cart', cal=call.message.chat.id)
 
-            if slider[1] < len(sessions[call.message.chat.id]['cart_ids'][1:]) and slider[2] > 0:
+            if slider[1] < len(sessions[call.message.chat.id]['real_cart']) and slider[2] > 0:
                 for id in sessions[call.message.chat.id]['cart_ids'][1:]:
                     bot.delete_message(chat_id=call.message.chat.id, message_id=id)
                 bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.message_id)
