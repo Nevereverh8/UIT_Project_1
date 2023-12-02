@@ -698,20 +698,20 @@ if __name__ == "__main__":
                                           message_id=pending_orders[call.data.split(';')[2]]['message_id'],
                                           text='Спасибо что выбрали нас! Будем благодарны если вы оставите отзыв',
                                           reply_markup=i_kb)
+                    id = int(call.data.split(';')[2][2:])
+                    sessions.pop(id)  # очистка сессии, потом перенести в кнопки отзыв и в меню после выполнения заказа
+                    sessions[id] = {}
+                    sessions[id]['last_foods'] = {}
+                    sessions[id]['cart'] = {}
+                    sessions[id]['food_list'] = []  # Удалить потом
+                    sessions[id]['real_cart'] = {}
+                    sessions[id]['cart_ids'] = []
+                    sessions[id]['contacts'] = {}
+                    sessions[id]['contacts']['phone'] = ''  # подругзить из базы
+                    sessions[id]['contacts']['adress'] = ''
                 elif call.data.split(';')[2][:2] == 'VK':
                     i_kb = VkKeyboard(*settings2)
                     i_kb.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-                id = int(call.data.split(';')[2][2:])
-                sessions.pop(id)  # очистка сессии, потом перенести в кнопки отзыв и в меню после выполнения заказа
-                sessions[id] = {}
-                sessions[id]['last_foods'] = {}
-                sessions[id]['cart'] = {}
-                sessions[id]['food_list'] = []  # Удалить потом
-                sessions[id]['real_cart'] = {}
-                sessions[id]['cart_ids'] = []
-                sessions[id]['contacts'] = {}
-                sessions[id]['contacts']['phone'] = ''  # подругзить из базы
-                sessions[id]['contacts']['adress'] = ''
                 pending_orders.pop(call.data.split(';')[2])
             if call.data.split(';')[1] == 'apr':
                 # Добавить проверку на клиента чтобы изменить адрес и телефон в базе
@@ -744,10 +744,15 @@ if __name__ == "__main__":
 
                 elif call.data.split(';')[2][:2] == 'VK':
                     # i_kb = VkKeyboard(*settings2)
-                    # i_kb.add_button()
-                    vk.messages.edit(peer_id=call.data.split(';')[2][2:],
-                                     message='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут',
-                                     conversation_message_id=pending_orders[call.data.split(';')[2]]['message_id'])
+                    # i_kb.add_button() int(call.data.split(';')[2][2:])
+                    print(pending_orders[call.data.split(';')[2]]['message_id'])
+                    print('peer id', int(call.data.split(';')[2][2:]))
+                    # vk.messages.edit(peer_id=int(call.data.split(';')[2][2:]),
+                    #                  message='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут',
+                    #                  conversation_message_id=int(pending_orders[call.data.split(';')[2]]['message_id']))
+                    vk.messages.edit(peer_id=int(call.data.split(';')[2][2:]),
+                                     message_id=int(pending_orders[call.data.split(';')[2]]['message_id']),
+                                     message='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут')
 
             i_kb = InlineKeyboardMarkup()
             i_kb.add(InlineKeyboardButton('Заказ выполнен', callback_data='adm;done;' + call.data.split(';')[2]))

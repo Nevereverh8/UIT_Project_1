@@ -167,13 +167,13 @@ def key_gen_cart(dicty, num, fix_poz=6, flag="x", user_id=None):
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num + 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     elif num != 0 and end_ == len(dicty):
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num - 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     elif num != 0:
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num + 1)})
@@ -181,10 +181,10 @@ def key_gen_cart(dicty, num, fix_poz=6, flag="x", user_id=None):
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num - 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     else:
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     # print(vkinl.keyboard)
     return vkinl
 
@@ -236,7 +236,7 @@ def order_interbellum(iser_id):
         vkinl.add_callback_button(label="Изменить заказ", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": 'change' + ' ;''; ' + str(0)})
         vkinl.add_callback_button(label="Продолжить", color=VkKeyboardColor.PRIMARY,
-                                  payload={"type": ''})
+                                  payload={"type": 'continue'})
     else:
         order_message += 'На данный момент вы ни чего не выбрали'
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
@@ -417,10 +417,13 @@ for event in longpoll.listen():
                     sessions[user_id]['edit_leader'] = 0
                 mess, keyb = order_interbellum(user_id)
                 last_id = send_message_event(mess, keyb)
-                sessions[user_id]['death_leader'] = [last_id]
+                sessions[user_id]['death_leader'] = last_id
+            elif flag == 'continue':
+                print(sessions[user_id]['death_leader'])
+                send_order('VK', user_id, 'Кольцова 42', '+375291825903', sessions[user_id]['death_leader'], sessions[user_id]['cart'])
             elif flag == 'change':
                 if sessions[user_id]['death_leader']:
-                    message_delete(sessions[user_id]['death_leader'], new=False)
+                    message_delete([sessions[user_id]['death_leader']], new=False)
                 keyb = key_gen_cart(sessions[user_id]['cart'], 0, flag='m_item', user_id=user_id)
                 last_id = send_message_event('Навигация', keyb)
                 sessions[user_id]['edit_leader'] = last_id
