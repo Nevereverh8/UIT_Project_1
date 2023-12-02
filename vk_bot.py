@@ -9,6 +9,7 @@ from db_requests import db
 import telebot
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from telegram_bot import send_order
+
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
 admin_chat_id = -1002019810166
 GROUP_ID = '168407288'
@@ -94,13 +95,15 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     elif num != 0 and end_ == len(dicty):
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     elif num != 0:
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
@@ -108,10 +111,12 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
                                   payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     else:
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     # print(vkinl.keyboard)
     return vkinl
 
@@ -132,9 +137,11 @@ def key_gen_pos(pos_name, user_id, change=0):
             sessions[user_id]['temp'][pos_name] = result
     # изменение текста кнопки при изменении количества позиций после того как данные есть в корзине
     if pos_name in sessions[user_id]['cart']:
-        if sessions[user_id]['temp'][pos_name] == sessions[user_id]['cart'][pos_name] and sessions[user_id]['cart'][pos_name] != 0:
+        if sessions[user_id]['temp'][pos_name] == sessions[user_id]['cart'][pos_name] and sessions[user_id]['cart'][
+            pos_name] != 0:
             cart_text = 'Уже в корзине'
-        elif sessions[user_id]['temp'][pos_name] != sessions[user_id]['cart'][pos_name] and sessions[user_id]['cart'][pos_name] != 0:
+        elif sessions[user_id]['temp'][pos_name] != sessions[user_id]['cart'][pos_name] and sessions[user_id]['cart'][
+            pos_name] != 0:
             cart_text = 'Изменить кол-во'
         else:
             cart_text = "Добавить в корзину"
@@ -149,6 +156,7 @@ def key_gen_pos(pos_name, user_id, change=0):
     vkinl.add_callback_button(label=cart_text, color=VkKeyboardColor.PRIMARY,
                               payload={"type": 'cart' + ' ;' + pos_name + '; ' + str(0)})
     return vkinl
+
 
 def key_gen_cart(dicty, num, fix_poz=6, flag="x", user_id=None):
     vkinl = VkKeyboard(**settings2)
@@ -167,13 +175,15 @@ def key_gen_cart(dicty, num, fix_poz=6, flag="x", user_id=None):
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num + 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     elif num != 0 and end_ == len(dicty):
         vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num - 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     elif num != 0:
         vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num + 1)})
@@ -181,12 +191,15 @@ def key_gen_cart(dicty, num, fix_poz=6, flag="x", user_id=None):
                                   payload={"type": flag + ' ;' + '' + '; ' + str(num - 1)})
         vkinl.add_line()
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     else:
         vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+        vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
     # print(vkinl.keyboard)
     return vkinl
+
 
 # double call if u want to change amount(кол-во)
 def key_gen_pos_cart(pos_name, user_id, change=0):
@@ -211,6 +224,7 @@ def pos_temp_handler(pos_name, user_id):
     keyb = key_gen_pos(pos_name, user_id)
     return keyb
 
+
 def message_delete(listy, new=True):
     print(listy, "listy")
     if new:
@@ -222,6 +236,7 @@ def message_delete(listy, new=True):
                            message_ids=listy,
                            delete_for_all=True)
 
+
 def order_interbellum(iser_id):
     vkinl = VkKeyboard(**settings2)
     order_message = '\n*\n*\n*\n'
@@ -230,8 +245,8 @@ def order_interbellum(iser_id):
         for key, value in sessions[iser_id]['cart'].items():
             if value > 0:
                 price = db.get_item('Food', key, 'name')[0][2]
-                order_message += f"""{key} X {value} шт. : {price} * {value} = {price*value} руб\n"""
-                total_price += price*value
+                order_message += f"""{key} X {value} шт. : {price} * {value} = {price * value} руб\n"""
+                total_price += price * value
         order_message += f"""Цена заказа {total_price} руб\n"""
         vkinl.add_callback_button(label="Изменить заказ", color=VkKeyboardColor.PRIMARY,
                                   payload={"type": 'change' + ' ;''; ' + str(0)})
@@ -303,6 +318,7 @@ def send_message_event(message, keyboard=None):
             message=message)
     return mes_id
 
+
 def send_message_new(message, keyboard=None):
     if keyboard:
         mes_id = vk.messages.send(
@@ -327,7 +343,7 @@ def adder_of_dict_sections_for_user(dicty, user_id):
     dicty[user_id]['death_leader'] = []
     dicty[user_id]['edit_leader'] = 0
     dicty[user_id]['contacts'] = {}
-    dicty[user_id]['credentials'] = {}
+    dicty[user_id]['credentials'] = {'flag_tel': False, 'flag_adr': False}
 
 
 print("Ready")
@@ -341,6 +357,10 @@ for event in longpoll.listen():
                 if user_id not in sessions:
                     sessions[user_id] = {}
                     adder_of_dict_sections_for_user(sessions, user_id)
+                if sessions[user_id]['credentials']['flag_tel']:
+                    pass
+                if sessions[user_id]['credentials']['flag_adr']:
+                    pass
                 if event.obj.message['text'] == 'Запустить бота!' or event.obj.message['text'] == "Меню!":
                     if sessions[user_id]['edit_leader']:
                         message_delete([sessions[user_id]['edit_leader']])
@@ -390,7 +410,8 @@ for event in longpoll.listen():
                     sessions[event.object.user_id]['death_squad'] = []
                 dicty_of_item = db.get_category(event.object.payload.get('type').split(';')[1])
                 keyb = key_gen_cat(dicty_of_item, int(data), flag='i',
-                                   dicty_name=event.object.payload.get('type').split(';')[1], user_id=event.object.user_id)
+                                   dicty_name=event.object.payload.get('type').split(';')[1],
+                                   user_id=event.object.user_id)
                 last_id = edit_message('Навигация', keyb)
 
             elif flag == 'item':
@@ -419,8 +440,10 @@ for event in longpoll.listen():
                 last_id = send_message_event(mess, keyb)
                 sessions[user_id]['death_leader'] = last_id
             elif flag == 'continue':
+                # work work
                 print(sessions[user_id]['death_leader'])
-                send_order('VK', user_id, 'Кольцова 42', '+375291825903', sessions[user_id]['death_leader'], sessions[user_id]['cart'])
+                send_order('VK', user_id, 'Кольцова 42', '+375291825903', sessions[user_id]['death_leader'],
+                           sessions[user_id]['cart'])
             elif flag == 'change':
                 if sessions[user_id]['death_leader']:
                     message_delete([sessions[user_id]['death_leader']], new=False)
@@ -464,4 +487,3 @@ vk.method("messages.send", {"peer_id": id, "message": "TEST", "attachment": "pho
 """
 # message_delete(sessions[user_id]['death_squad'], new=False)
 # message_delete(sessions[user_id]['death_leader'], new=False)
-
