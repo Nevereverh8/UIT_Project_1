@@ -332,27 +332,48 @@ if __name__ == "__main__":
         # Callback для кнопок + и -. UPD 02:1 18.11
         # Callback buttons + and -, I tend to think that it is bad code
         if call.data.split(';')[0] == 'fa':
+            if call.message.caption:
+                call_message = call.message.caption
+            else: 
+                call_message = call.message.text
             if call.data.split(';')[1] == '+':
-                if call.message.text in sessions[call.message.chat.id]['cart']:
-                    sessions[call.message.chat.id]['cart'][call.message.text] += 1
+                if call_message in sessions[call.message.chat.id]['cart']:
+                    sessions[call.message.chat.id]['cart'][call_message] += 1
                 else:
-                    sessions[call.message.chat.id]['cart'][call.message.text] = 1
-                bot.edit_message_text(chat_id=call.message.chat.id,
-                                      message_id=call.message.message_id,
-                                      text=call.message.text,
-                                      reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
-                                                             call.message.chat.id,
-                                                             sessions[call.message.chat.id]['cart'][call.message.text]))
+                    sessions[call.message.chat.id]['cart'][call_message] = 1
+                # sorry for that
+                if call.message.caption:   
+                    bot.edit_message_caption(chat_id=call.message.chat.id,
+                                        message_id=call.message.message_id,
+                                        caption=call_message,
+                                        reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                call.message.chat.id,
+                                                                sessions[call.message.chat.id]['cart'][call_message])) 
+                else:
+                    bot.edit_message_text(chat_id=call.message.chat.id,
+                                        message_id=call.message.message_id,
+                                        text=call_message,
+                                        reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                call.message.chat.id,
+                                                                sessions[call.message.chat.id]['cart'][call_message]))
             if call.data.split(';')[1] == '-':
-                if call.message.text in sessions[call.message.chat.id]['cart']:
-                    if sessions[call.message.chat.id]['cart'][call.message.text] != 0:
-                        sessions[call.message.chat.id]['cart'][call.message.text] -= 1
-                        bot.edit_message_text(chat_id=call.message.chat.id,
-                                              message_id=call.message.message_id,
-                                              text=call.message.text,
-                                              reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
-                                                                     call.message.chat.id,
-                                                                     sessions[call.message.chat.id]['cart'][call.message.text]))
+                if call_message in sessions[call.message.chat.id]['cart']:
+                    if sessions[call.message.chat.id]['cart'][call_message] != 0:
+                        sessions[call.message.chat.id]['cart'][call_message] -= 1
+                        if call.message.caption:
+                            bot.edit_message_caption(chat_id=call.message.chat.id,
+                                                message_id=call.message.message_id,
+                                                caption=call_message,
+                                                reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                        call.message.chat.id,
+                                                                        sessions[call.message.chat.id]['cart'][call_message]))
+                        else:
+                            bot.edit_message_text(chat_id=call.message.chat.id,
+                                                message_id=call.message.message_id,
+                                                text=call_message,
+                                                reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                        call.message.chat.id,
+                                                                        sessions[call.message.chat.id]['cart'][call_message]))
 
 
         # Переключение страниц блюд в категории с помощью слайдера
@@ -365,7 +386,7 @@ if __name__ == "__main__":
 
             food_list = sessions[call.message.chat.id]['food_list']
             last_foods = sessions[call.message.chat.id]['last_foods']
-
+            
             if slider[1] < len(food_list) and slider[2] > 0:
                 for id in last_foods:
                     bot.delete_message(chat_id=call.message.chat.id, message_id=id)
@@ -377,32 +398,57 @@ if __name__ == "__main__":
                     sessions[call.message.chat.id]['last_foods'][a.message_id] = 0
                 bot.send_message(call.message.chat.id, 'Навигация', reply_markup=gen_slider(slider[3])[0])
 
-        # Добавление позиций в корзину
+        # Добавление позиций в корзину    
         # Adding dishes in cart
         if call.data.split(';')[0] == 'f':
+            if call.message.caption:
+                call_message = call.message.caption
+            else:
+                call_message = call.message.text
             if call.data.split(';')[1] != '0':
-                sessions[call.message.chat.id]['real_cart'][call.message.text.split(' цена за шт. - ')[0]] = int(
+                sessions[call.message.chat.id]['real_cart'][call_message.split(' цена за шт. - ')[0]] = int(
                     call.data.split(';')[1])
-                if call.data.split(';')[1] != str(sessions[call.message.chat.id]['cart'][call.message.text]):
-                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                          text=call.message.text,
-                                          reply_markup=gen_foods(call.message.text.split(' цена за шт. - '), call.message.chat.id,
-                                                                 sessions[call.message.chat.id]['cart'][call.message.text]))
+                if call.data.split(';')[1] != str(sessions[call.message.chat.id]['cart'][call_message]):
+                    if call.message.caption:
+                        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                            caption=call_message,
+                                            reply_markup=gen_foods(call_message.split(' цена за шт. - '), call.message.chat.id,
+                                                                    sessions[call.message.chat.id]['cart'][call_message]))
+                    else:
+                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                            text=call_message,
+                                            reply_markup=gen_foods(call_message.split(' цена за шт. - '), call.message.chat.id,
+                                                                    sessions[call.message.chat.id]['cart'][call_message]))
+                else:
+                    if call.message.caption:
+                        bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                                caption=call_message,
+                                                reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                        call.message.chat.id,
+                                                                        sessions[call.message.chat.id]['cart'][call_message],
+                                                                        state='n'))
+                    else:
+                        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                            text=call_message,
+                                            reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                    call.message.chat.id,
+                                                                    sessions[call.message.chat.id]['cart'][call_message],
+                                                                    state='n'))
+            elif call_message.split(' цена за шт. - ')[0] in sessions[call.message.chat.id]['real_cart']:
+                sessions[call.message.chat.id]['real_cart'].pop(call_message.split(' цена за шт. - ')[0])
+                if call.message.caption:
+                    bot.edit_message_caption(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                        caption=call_message,
+                                        reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                call.message.chat.id,
+                                                                0))
                 else:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                          text=call.message.text,
-                                          reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
-                                                                 call.message.chat.id,
-                                                                 sessions[call.message.chat.id]['cart'][call.message.text],
-                                                                 state='n'))
-            elif call.message.text.split(' цена за шт. - ')[0] in sessions[call.message.chat.id]['real_cart']:
-                sessions[call.message.chat.id]['real_cart'].pop(call.message.text.split(' цена за шт. - ')[0])
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                      text=call.message.text,
-                                      reply_markup=gen_foods(call.message.text.split(' цена за шт. - '),
-                                                             call.message.chat.id,
-                                                             0))
-            print(sessions[call.message.chat.id]['real_cart'])
+                                        text=call_message,
+                                        reply_markup=gen_foods(call_message.split(' цена за шт. - '),
+                                                                call.message.chat.id,
+                                                                0))
+                print(sessions[call.message.chat.id]['real_cart'])
             sys.stdout.flush()
 
         if call.data.split(';')[0] == 'cart':
