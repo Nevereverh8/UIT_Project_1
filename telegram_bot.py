@@ -1,6 +1,6 @@
 # -*- coding: utf-8-sig -*-
 import time
-
+from vk_api import VkApi
 import telebot
 import os
 from telebot import types
@@ -8,9 +8,18 @@ from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from db_requests import db
 import sys
 from db_requests import pending_orders
+from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 # sys.stdout.flush() После принта
+# vk
+GROUP_ID = '168407288'
+GROUP_TOKEN = 'vk1.a.V_3LVLsyaa3Z-x1TlEmcrWA8fHL-aHH-MM5tYAAVF9qF7wwZTreoJvg187d8PG1bXEacBFTVi9jwfU8DyS-6DMmW6uPouJzV5NJl3nUL0KY855az30d9bbF5ZcnRXvC_1gPa_ZroL5sCosDoSlNj0lRAHkZNfinTvHVVUUv7YfmCEPtE_k0A0ysrGDJ1GivmCNmUxHGODcNy-tPhcvSdNA'
+API_VERSION = '5.120'
+vk_session = VkApi(token=GROUP_TOKEN, api_version=API_VERSION)
+vk = vk_session.get_api()
+# telegram
 bot = telebot.TeleBot('6566836113:AAEROPk40h1gT7INUnWNPg2LEbYug6uDbns')
 admin_chat_id = -1002019810166
+settings2 = dict(one_time=False, inline=True)
 
 bot_photos = {}
 sessions = {}
@@ -623,46 +632,75 @@ if __name__ == "__main__":
                     bot.delete_message(chat_id=admin_chat_id,
                                        message_id=i)
                 a = send_order(call.data.split(';')[2][:2],
-                           int(call.data.split(';')[2][2:]),
-                           pending_orders[call.data.split(';')[2]]['contact_message'],
-                           pending_orders[call.data.split(';')[2]]['tel'],
-                           pending_orders[call.data.split(';')[2]]['message_id'],
-                           pending_orders[call.data.split(';')[2]]['cart'],
-                           pending_orders[call.data.split(';')[2]]['username']
-                           )
+                               int(call.data.split(';')[2][2:]),
+                               pending_orders[call.data.split(';')[2]]['contact_message'],
+                               pending_orders[call.data.split(';')[2]]['tel'],
+                               pending_orders[call.data.split(';')[2]]['message_id'],
+                               pending_orders[call.data.split(';')[2]]['cart'],
+                               pending_orders[call.data.split(';')[2]]['username']
+                               )
                 bot.edit_message_text(chat_id=admin_chat_id,
                                       message_id=pending_orders[call.data.split(';')[2]]['admin_messages'],
                                       text=f'{a.text}\n ожидание подтверждения изменений от клиента')
-                bot.delete_message(int(call.data.split(';')[2][2:]),
-                                   pending_orders[call.data.split(';')[2]]['message_id'])
-                sessions[int(call.data.split(';')[2][2:])]['real_cart'] = pending_orders[call.data.split(';')[2]]['cart']
-                order_message = ''
-                price = 0
-                for item in sessions[int(call.data.split(';')[2][2:])]['real_cart']:
-                    order_message += item + ', ' + str(sessions[int(call.data.split(';')[2][2:])]['real_cart'][item]) + ' шт. : ' + str(
-                        sessions[int(call.data.split(';')[2][2:])]['real_cart'][item] * db.get_item('Food', item, 'name')[0][
-                            2]) + ' руб' + '\n'
-                    price += sessions[int(call.data.split(';')[2][2:])]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2]
-                text = f'''К сожалению одно из блюд которые вы заказали не может быть приготовлено.
-                \n Предлагаем вам вот такую альтернативу:\n{order_message}стоимость такого заказа составит: {price} руб.'''
-                i_kb = InlineKeyboardMarkup()
-                i_kb.add(InlineKeyboardButton('Оформить', callback_data='o;send'),
-                         InlineKeyboardButton('В меню', callback_data='m;m'))
-                bot.send_message(chat_id=int(call.data.split(';')[2][2:]),
-                                 text=text,
-                                 reply_markup=i_kb)
 
+                if call.data.split(';')[2][:2] == 'TG':
+                    bot.delete_message(int(call.data.split(';')[2][2:]),
+                                       pending_orders[call.data.split(';')[2]]['message_id'])
+                    sessions[int(call.data.split(';')[2][2:])]['real_cart'] = pending_orders[call.data.split(';')[2]]['cart']
+                    order_message = ''
+                    price = 0
+                    for item in sessions[int(call.data.split(';')[2][2:])]['real_cart']:
+                        order_message += item + ', ' + str(sessions[int(call.data.split(';')[2][2:])]['real_cart'][item]) + ' шт. : ' + str(
+                            sessions[int(call.data.split(';')[2][2:])]['real_cart'][item] * db.get_item('Food', item, 'name')[0][
+                                2]) + ' руб' + '\n'
+                        price += sessions[int(call.data.split(';')[2][2:])]['real_cart'][item] * db.get_item('Food', item, 'name')[0][2]
+                    text = f'''К сожалению одно из блюд которые вы заказали не может быть приготовлено.
+                    \n Предлагаем вам вот такую альтернативу:\n{order_message}стоимость такого заказа составит: {price} руб.'''
+                    i_kb = InlineKeyboardMarkup()
+                    i_kb.add(InlineKeyboardButton('Оформить', callback_data='o;send'),
+                             InlineKeyboardButton('В меню', callback_data='m;m'))
+                    bot.send_message(chat_id=int(call.data.split(';')[2][2:]),
+                                     text=text,
+                                     reply_markup=i_kb)
+                elif call.data.split(';')[2][:2] == 'VK':
+                    order_message = ''
+                    price = 0
+                    for item in pending_orders[call.data.split(';')[2]]['cart']:
+                        order_message += item + ', ' + str(
+                            pending_orders[call.data.split(';')[2]]['cart']) + ' шт. : ' + str(
+                            pending_orders[call.data.split(';')[2]]['cart'][item] *
+                            db.get_item('Food', item, 'name')[0][
+                                2]) + ' руб' + '\n'
+                        price += pending_orders[call.data.split(';')[2]]['cart'][item] * \
+                                 db.get_item('Food', item, 'name')[0][2]
+                    text = f'''К сожалению одно из блюд которые вы заказали не может быть приготовлено.
+                                        \n Предлагаем вам вот такую альтернативу:\n{order_message}стоимость такого заказа составит: {price} руб.'''
+                    vk.messages.delete(peer_id=int(call.data.split(';')[2][2:]),
+                                       message_ids=[pending_orders[call.data.split(';')[2]]['message_id']],
+                                       delete_for_all=True)
+                    i_kb = VkKeyboard(*settings2)
+                    i_kb.add_button(label="Меню", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})   # Андрей
+                    i_kb.add_button(label="Оформить", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})  # send_order()
+                    vk.messages.send(user_id=int(call.data.split(';')[2][2:]),
+                                     random_id=0,
+                                     peer_id=int(call.data.split(';')[2][2:]),
+                                     keyboard=i_kb.get_keyboard(),
+                                     message=text)
             # Подтверждение заказа TG
             if call.data.split(';')[1] == 'done':
                 # очистить корзину и реальную корзину
                 # clear cart and real cart
-                i_kb = InlineKeyboardMarkup()
-                i_kb.add(InlineKeyboardButton('Отзыв', callback_data='o;review'))
-                i_kb.add(InlineKeyboardButton('В меню', callback_data='m;0'))
-                bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
-                                      message_id=pending_orders[call.data.split(';')[2]]['message_id'],
-                                      text='Спасибо что выбрали нас! Будем благодарны если вы оставите отзыв',
-                                      reply_markup=i_kb)
+                if call.data.split(';')[2][:2] == 'TG':
+                    i_kb = InlineKeyboardMarkup()
+                    i_kb.add(InlineKeyboardButton('Отзыв', callback_data='o;review'))
+                    i_kb.add(InlineKeyboardButton('В меню', callback_data='m;0'))
+                    bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
+                                          message_id=pending_orders[call.data.split(';')[2]]['message_id'],
+                                          text='Спасибо что выбрали нас! Будем благодарны если вы оставите отзыв',
+                                          reply_markup=i_kb)
+                elif call.data.split(';')[2][:2] == 'VK':
+                    i_kb = VkKeyboard(*settings2)
+                    i_kb.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
                 id = int(call.data.split(';')[2][2:])
                 sessions.pop(id)  # очистка сессии, потом перенести в кнопки отзыв и в меню после выполнения заказа
                 sessions[id] = {}
@@ -696,19 +734,27 @@ if __name__ == "__main__":
                                                 time_placed,
                                                 db.get_item('Admins', call.from_user.id, 'tg_id')[0][0],
                                                 pending_orders[call.data.split(';')[2]]['cart'])
-                i_kb = InlineKeyboardMarkup()
-                i_kb.add(InlineKeyboardButton('С моим заказом что-то не так', callback_data='o;wrong') )
-                bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
-                                      message_id=pending_orders[call.data.split(';')[2]]['message_id'],
-                                      text='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут',
-                                      reply_markup=i_kb)
-                i_kb = InlineKeyboardMarkup()
-                i_kb.add(InlineKeyboardButton('Заказ выполнен', callback_data='adm;done;'+call.data.split(';')[2]))
-                bot.edit_message_text(chat_id=call.message.chat.id,
-                                      message_id=call.message.message_id,
-                                      text=call.message.text,
-                                      reply_markup=i_kb)
+                if call.data.split(';')[2][:2] == 'TG':
+                    i_kb = InlineKeyboardMarkup()
+                    i_kb.add(InlineKeyboardButton('С моим заказом что-то не так', callback_data='o;wrong') )
+                    bot.edit_message_text(chat_id=int(call.data.split(';')[2][2:]),
+                                          message_id=pending_orders[call.data.split(';')[2]]['message_id'],
+                                          text='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут',
+                                          reply_markup=i_kb)
 
+                elif call.data.split(';')[2][:2] == 'VK':
+                    # i_kb = VkKeyboard(*settings2)
+                    # i_kb.add_button()
+                    vk.messages.edit(peer_id=call.data.split(';')[2][2:],
+                                     message='Ваш заказ будет доставлен через ' + str(delivery_time) + ' минут',
+                                     conversation_message_id=pending_orders[call.data.split(';')[2]]['message_id'])
+
+            i_kb = InlineKeyboardMarkup()
+            i_kb.add(InlineKeyboardButton('Заказ выполнен', callback_data='adm;done;' + call.data.split(';')[2]))
+            bot.edit_message_text(chat_id=call.message.chat.id,
+                                  message_id=call.message.message_id,
+                                  text=call.message.text,
+                                  reply_markup=i_kb)
             # Отклонение заказа TG
             if call.data.split(';')[1] == 'deca':
                 i_kb = InlineKeyboardMarkup()
