@@ -190,12 +190,12 @@ def key_gen_cart(dicty, num, fix_poz=6, flag="x", user_id=None):
 
 # double call if u want to change amount(кол-во)
 def key_gen_pos_cart(pos_name, user_id, change=0):
-    but_text = f"Кол-во: {sessions[user_id]['cart'][pos_name]}"
     # работа с temp при нажатии на "+" и "-"
     if change:
         result = sessions[user_id]['cart'][pos_name] + change
         if result >= 0:
             sessions[user_id]['cart'][pos_name] = result
+    but_text = f"Кол-во: {sessions[user_id]['cart'][pos_name]}"
     vkinl = VkKeyboard(**settings2)
     vkinl.add_callback_button(label="-", color=VkKeyboardColor.PRIMARY,
                               payload={"type": 'c_item' + ' ;' + pos_name + '; ' + str(-1)})
@@ -430,7 +430,9 @@ for event in longpoll.listen():
                 keyb = key_gen_cart(sessions[user_id]['cart'], int(data), flag='m_item', user_id=user_id)
                 last_id = edit_message('Навигация', keyb)
             elif flag == 'c_item':
-                pass
+                name = event.object.payload.get('type').split(';')[1]
+                keyb = key_gen_pos_cart(name, user_id, int(data))
+                last_id = edit_message(name, keyb)
             # print(event)
             # print(sessions[user_id]['temp'])
             # print(sessions[user_id]['cart'])
