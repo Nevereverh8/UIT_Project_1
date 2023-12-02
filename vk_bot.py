@@ -115,44 +115,6 @@ def key_gen_cat(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
     # print(vkinl.keyboard)
     return vkinl
 
-def key_gen_cart(dicty, num, fix_poz=3, flag="x", dicty_name=None, user_id=None):
-    vkinl = VkKeyboard(**settings2)
-    if ((num + 1) * fix_poz) < len(dicty):
-        end_ = ((num + 1) * fix_poz)
-    else:
-        end_ = len(dicty)
-    listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
-    # print(listy)
-    for x in range(num * fix_poz, end_):
-        death_id = send_message_event(listy[x], key_gen_pos(listy[x], user_id))
-        # death is only the beginning
-        sessions[user_id]['death_squad'].append(death_id)
-    if num == 0 and end_ != len(dicty):
-        vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
-                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
-        vkinl.add_line()
-        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
-    elif num != 0 and end_ == len(dicty):
-        vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
-                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
-        vkinl.add_line()
-        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
-    elif num != 0:
-        vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
-                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num + 1)})
-        vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
-                                  payload={"type": flag + ' ;' + dicty_name + '; ' + str(num - 1)})
-        vkinl.add_line()
-        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
-    else:
-        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
-        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
-    # print(vkinl.keyboard)
-    return vkinl
-
 
 # double call if u want to change amount(кол-во)
 def key_gen_pos(pos_name, user_id, change=0):
@@ -187,6 +149,62 @@ def key_gen_pos(pos_name, user_id, change=0):
     vkinl.add_callback_button(label=cart_text, color=VkKeyboardColor.PRIMARY,
                               payload={"type": 'cart' + ' ;' + pos_name + '; ' + str(0)})
     return vkinl
+
+def key_gen_cart(dicty, num, fix_poz=6, flag="x", user_id=None):
+    vkinl = VkKeyboard(**settings2)
+    if ((num + 1) * fix_poz) < len(dicty):
+        end_ = ((num + 1) * fix_poz)
+    else:
+        end_ = len(dicty)
+    listy = [key for x in range(len(dicty)) for i, key in enumerate(dicty) if x == i]
+    # print(listy)
+    for x in range(num * fix_poz, end_):
+        death_id = send_message_event(listy[x], key_gen_pos_cart(listy[x], user_id))
+        # death is only the beginning
+        sessions[user_id]['death_squad'].append(death_id)
+    if num == 0 and end_ != len(dicty):
+        vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + '' + '; ' + str(num + 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Оформить заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    elif num != 0 and end_ == len(dicty):
+        vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + '' + '; ' + str(num - 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    elif num != 0:
+        vkinl.add_callback_button(label="Next", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + '' + '; ' + str(num + 1)})
+        vkinl.add_callback_button(label="Back", color=VkKeyboardColor.PRIMARY,
+                                  payload={"type": flag + ' ;' + '' + '; ' + str(num - 1)})
+        vkinl.add_line()
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    else:
+        vkinl.add_button(label="Меню!", color=VkKeyboardColor.PRIMARY, payload={"type": "text"})
+        # vkinl.add_callback_button(label="Ваш заказ", color=VkKeyboardColor.PRIMARY, payload={"type": 'inter' + ' ;' + '' + '; ' + str(0)})
+    # print(vkinl.keyboard)
+    return vkinl
+
+# double call if u want to change amount(кол-во)
+def key_gen_pos_cart(pos_name, user_id, change=0):
+    but_text = f"Кол-во: {sessions[user_id]['cart'][pos_name]}"
+    # работа с temp при нажатии на "+" и "-"
+    if change:
+        result = sessions[user_id]['cart'][pos_name] + change
+        if result >= 0:
+            sessions[user_id]['cart'][pos_name] = result
+    vkinl = VkKeyboard(**settings2)
+    vkinl.add_callback_button(label="-", color=VkKeyboardColor.PRIMARY,
+                              payload={"type": 'c_item' + ' ;' + pos_name + '; ' + str(-1)})
+    vkinl.add_callback_button(label=but_text, color=VkKeyboardColor.PRIMARY,
+                              payload={"type": ''})
+    vkinl.add_callback_button(label="+", color=VkKeyboardColor.PRIMARY,
+                              payload={"type": 'c_item' + ' ;' + pos_name + '; ' + str(1)})
+    return vkinl
+
 
 def pos_temp_handler(pos_name, user_id):
     sessions[user_id]['cart'][pos_name] = sessions[user_id]['temp'][pos_name]
@@ -309,6 +327,7 @@ def adder_of_dict_sections_for_user(dicty, user_id):
     dicty[user_id]['death_leader'] = []
     dicty[user_id]['edit_leader'] = 0
     dicty[user_id]['contacts'] = {}
+    dicty[user_id]['credentials'] = {}
 
 
 print("Ready")
@@ -402,7 +421,16 @@ for event in longpoll.listen():
             elif flag == 'change':
                 if sessions[user_id]['death_leader']:
                     message_delete(sessions[user_id]['death_leader'], new=False)
-
+                keyb = key_gen_cart(sessions[user_id]['cart'], 0, flag='m_item', user_id=user_id)
+                last_id = send_message_event('Навигация', keyb)
+                sessions[user_id]['edit_leader'] = last_id
+            elif flag == 'm_item':
+                message_delete(sessions[event.object.user_id]['death_squad'], new=False)
+                sessions[event.object.user_id]['death_squad'] = []
+                keyb = key_gen_cart(sessions[user_id]['cart'], int(data), flag='m_item', user_id=user_id)
+                last_id = edit_message('Навигация', keyb)
+            elif flag == 'c_item':
+                pass
             # print(event)
             # print(sessions[user_id]['temp'])
             # print(sessions[user_id]['cart'])

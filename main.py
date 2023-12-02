@@ -8,11 +8,11 @@ from telegram_bot import pending_orders
 import datetime as dt
 import runpy
 def vk():
-    runpy.run_module('telegram_bot', {}, "__main__")
+    import vk_bot
 
 
 def tg():
-    import vk_bot
+    runpy.run_module('telegram_bot', {}, "__main__")
 
 
 tg_thread = threading.Thread(target=tg)
